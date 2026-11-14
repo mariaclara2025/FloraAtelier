@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Atelier - Detalhes do Buquê</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f0ff', 100: '#ebdeff', 200: '#dac2ff', 300: '#c199ff',
+                            400: '#a366ff', 500: '#8b33ff', 600: '#751ae6', 700: '#6010bf',
+                            800: '#500e9e', 950: '#1b003a',
+                        },
+                        accent: {
+                            pink: '#f472b6', lavender: '#e9d5ff', emerald: '#10b981', rose: '#f43f5e', amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=300;400;500;600;700&family=Playfair+Display:wght=600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- NAV BAR -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-xl">🌸</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide bg-gradient-to-r from-brand-600 to-accent-pink bg-clip-text text-transparent">Flora Atelier</span>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-semibold">
+                <a href="/catalogo" class="text-slate-600 hover:text-brand-600 transition-colors">← Voltar ao Catálogo</a>
+                <a href="/carrinho" class="text-slate-700 hover:text-brand-600 font-bold flex items-center space-x-1 bg-purple-50 px-3 py-2 rounded-xl border border-purple-100">
+                    <span>🛒</span> <span>Carrinho</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="max-w-5xl mx-auto px-6 py-12 w-full flex-grow flex items-center justify-center">
+        <div class="bg-white border border-purple-100 rounded-3xl shadow-sm p-8 md:p-12 grid grid-cols-1 md:grid-cols-2 gap-12 max-w-4xl w-full">
+            
+            <!-- COLUNA DA ESQUERDA: IMAGEM -->
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-12 aspect-square flex flex-col items-center justify-center border border-purple-100/50 w-full relative">
+                    <span class="text-7xl mb-4">💐</span>
+                    <span class="text-xs font-mono text-slate-400 bg-white/80 border px-2 py-1 rounded-md">
+                        {{ produto.imagem if produto.imagem else 'Sem imagem' }}
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 text-center italic">Arranjo confeccionado à mão com hastes de chenille de alta qualidade.</p>
+            </div>
+
+            <!-- COLUNA DA DIREITA: INFORMAÇÕES -->
+            <div class="flex flex-col justify-between space-y-6">
+                <div class="space-y-4">
+                    <span class="text-[10px] font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-md uppercase tracking-wider inline-block">
+                        {{ produto.tipo if produto.tipo else 'Artesanal' }}
+                    </span>
+                    <h1 class="font-serif font-bold text-3xl text-slate-900 leading-tight">
+                        {{ produto.nome }}
+                    </h1>
+                    <div class="text-2xl font-mono font-bold text-brand-600">
+                        R$ {{ "%.2f"|format(produto.preco) }}
+                    </div>
+                    
+                    <div class="space-y-1.5 pt-2">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Descrição do Produto:</h4>
+                        <p class="text-sm text-slate-600 leading-relaxed">
+                            {{ produto.descricao if produto.descricao else 'Lindo buquê artesanal feito com fio de chenille, durabilidade eterna.' }}
+                        </p>
+                        <p class="text-[11px] text-slate-400 italic pt-1">
+                            *Nota: Por se tratar de um produto 100% manual, pequenos detalhes na modelagem das pétalas podem variar, tornando cada peça genuinamente única.
+                        </p>
+                    </div>
+
+                    <!-- TABELA DE ESPECIFICAÇÕES -->
+                    <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 text-xs mt-4">
+                        <div>
+                            <span class="block text-slate-400 font-medium">Dimensões / Tamanho</span>
+                            <span class="font-bold text-slate-700">{{ produto.tamanho if produto.tamanho else 'Médio' }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 font-medium">Tom Predominante</span>
+                            <span class="font-bold text-slate-700">{{ produto.cor_principal if produto.cor_principal else 'Variado' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORMULÁRIO DO BOTÃO CONECTADO AO BACKEND -->
+                <form action="/adicionar_carrinho" method="POST" class="w-full pt-4">
+                    <input type="hidden" name="produto_id" value="{{ produto.id }}">
+                    <button type="submit" 
+                        class="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold text-sm py-4 rounded-xl shadow-md text-center uppercase tracking-wider transition-all cursor-pointer border-none flex items-center justify-center space-x-2">
+                        <span>🛍️</span> <span>Adicionar este Arranjo ao Carrinho</span>
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
+        &copy; 2026 Flora Atelier • Detalhes de Engenharia e Vendas de Buquês.
+    </footer>
+
+</body>
+</html>

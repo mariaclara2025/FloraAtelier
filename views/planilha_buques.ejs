@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Atelier - Modelagem de Buquês</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f0ff',
+                            100: '#ebdeff',
+                            200: '#dac2ff',
+                            300: '#c199ff',
+                            400: '#a366ff',
+                            500: '#8b33ff',
+                            600: '#751ae6',
+                            700: '#6010bf',
+                            800: '#500e9e',
+                            950: '#1b003a',
+                        },
+                        accent: {
+                            pink: '#f472b6',
+                            lavender: '#e9d5ff',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Navegação -->
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">💐</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide bg-gradient-to-r from-brand-600 to-accent-pink bg-clip-text text-transparent">Flora Atelier</span>
+            </div>
+            <a href="/dashboard" class="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors flex items-center space-x-1">
+                <span>←</span> <span>Voltar para o Painel</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-7xl mx-auto px-6 py-8 w-full flex-grow grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Bloco Esquerdo: Formulário União de Criação + Múltiplas Flores -->
+        <section class="lg:col-span-6 bg-white border border-purple-100 rounded-3xl shadow-sm p-6 md:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <span class="text-[10px] font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-100 uppercase tracking-wider">Nova Modelagem</span>
+                <h2 class="font-serif text-2xl font-black text-slate-900 mt-2">Criar e Compor Buquê</h2>
+                <p class="text-xs text-slate-400 mt-1">Defina o nome, tempo e insira a quantidade de cada flor artesanal que fará parte do arranjo.</p>
+            </div>
+
+            <form action="/planilha_buques" method="POST" class="space-y-5">
+                <!-- Informações Básicas -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="flex flex-col space-y-1.5 sm:col-span-2">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Nome do Buquê</label>
+                        <input type="text" name="nome" required placeholder="Ex: Buquê de Noiva Rosé" 
+                            class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-sm outline-none transition-all">
+                    </div>
+                    <div class="flex flex-col space-y-1.5">
+                        <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tempo (min)</label>
+                        <input type="number" name="tempo_montagem_min" required min="1" placeholder="Ex: 45" 
+                            class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-2.5 text-sm outline-none transition-all">
+                    </div>
+                </div>
+
+                <!-- Seleção de Flores Ativas (Engenharia Sem JS) -->
+                <div class="flex flex-col space-y-2">
+                    <label class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Selecione as Flores Integrantes</label>
+                    <p class="text-[11px] text-slate-400 italic mb-2">Informe a quantidade apenas nas flores que deseja incluir neste buquê.</p>
+                    
+                    <div class="border border-slate-100 rounded-2xl max-h-64 overflow-y-auto divide-y divide-slate-100 bg-slate-50/30 p-2 space-y-1">
+                        {% for f in lista_flores %}
+                        <div class="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
+                            <div class="flex flex-col">
+                                <span class="text-sm font-semibold text-slate-800">{{ f.nome }}</span>
+                                <span class="text-[11px] text-slate-400">Custo M.O: R$ {{ "%.2f"|format(f.custo_mao_de_obra) if f.custo_mao_de_obra else "0.00" }}</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <!-- Passa o ID oculto da flor correspondente -->
+                                <input type="hidden" name="flor_id[]" value="{{ f.id }}">
+                                <label class="text-xs font-bold text-slate-400">Qtd:</label>
+                                <input type="number" name="qtd_usada[]" min="0" value="0"
+                                    class="w-16 bg-slate-50 border border-slate-200 focus:border-brand-300 text-center rounded-lg py-1 text-sm outline-none font-mono font-bold">
+                            </div>
+                        </div>
+                        {% else %}
+                        <p class="text-xs text-slate-400 text-center p-6 italic">Nenhuma flor cadastrada no sistema ainda.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <button type="submit" 
+                    class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-5 py-4 rounded-xl transition-all shadow-sm text-center uppercase tracking-wider cursor-pointer">
+                    Salvar Estrutura do Buquê Base
+                </button>
+            </form>
+        </section>
+
+        <!-- Bloco Direito: Listagem dos Buquês Existentes -->
+        <section class="lg:col-span-6 bg-white border border-purple-100 rounded-3xl shadow-sm flex flex-col justify-between overflow-hidden">
+            <div>
+                <div class="p-6 md:p-8 border-b border-slate-100">
+                    <h2 class="font-serif text-xl font-bold text-slate-900">Modelos Gravados</h2>
+                    <p class="text-xs text-slate-400">Visualize e encaminhe os arranjos montados direto para a esteira de precificação e vendas.</p>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                                <th class="py-4 px-6 w-2/12">ID</th>
+                                <th class="py-4 px-6 w-5/12">Nome do Buquê</th>
+                                <th class="py-4 px-6 w-2/12 text-center">Tempo</th>
+                                <th class="py-4 px-6 w-3/12 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                            {% for b in buques %}
+                            <tr class="hover:bg-slate-50/40 transition-colors">
+                                <td class="py-4 px-6 font-mono text-xs text-slate-400">#{{ b.id }}</td>
+                                <td class="py-4 px-6 font-semibold text-slate-900">{{ b.nome }}</td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="inline-block bg-slate-100 text-slate-600 text-xs font-medium px-2 py-1 rounded-md border border-slate-200/60">
+                                        {{ b.tempo_montagem_min }} min
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-right">
+                                    <a href="/precificacao/{{ b.id }}" 
+                                       class="inline-block bg-emerald-50 text-emerald-600 hover:bg-emerald-100 font-bold text-[11px] px-3 py-2 rounded-lg border border-emerald-100 transition-all uppercase tracking-wider">
+                                        Precificar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="py-12 text-center text-xs text-slate-400 italic">
+                                    Nenhum buquê estruturado no sistema ainda.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="p-6 bg-slate-50 border-t border-slate-100">
+                <div class="flex items-start space-x-3 text-xs text-slate-500 leading-relaxed">
+                    <span class="text-lg">⚙️</span>
+                    <p>O envio unificado processa todos os inputs de flores de maneira sequencial no Flask, garantindo a integridade dos dados sem a necessidade de scripts adicionais.</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white mt-12">
+        &copy; 2026 Flora Atelier • Módulo de Engenharia Reversa e Composição.
+    </footer>
+
+</body>
+</html>

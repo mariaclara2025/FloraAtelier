@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Atelier - Catálogo de Buquês</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🌸</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide text-purple-700">Flora Vitrine</span>
+            </div>
+            <div class="flex items-center space-x-6 text-xs font-semibold">
+                <a href="/" class="text-slate-600 hover:text-purple-600">Início</a>
+                <a href="/meus_pedidos" class="text-slate-600 hover:text-purple-600">Meus Pedidos</a>
+                <a href="/carrinho" class="text-slate-700 font-bold flex items-center space-x-1 bg-purple-50 px-3 py-2 rounded-xl border border-purple-100">
+                    <span>🛒</span> <span>Carrinho</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-6 py-8 w-full flex-grow grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+        
+        <aside class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-6">
+            <div>
+                <h3 class="font-serif text-lg font-bold text-slate-900">Filtrar Produtos</h3>
+                <p class="text-[11px] text-slate-400">Refine a sua busca por buquês de chenille.</p>
+            </div>
+
+            <form action="/catalogo" method="GET" class="space-y-4">
+                <div class="flex flex-col space-y-1">
+                    <label class="text-[10px] font-bold text-slate-400 uppercase">Pesquisar por Nome</label>
+                    <input type="text" name="pesquisa" placeholder="Ex: Tulipa, Girassol..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs outline-none">
+                </div>
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all uppercase tracking-wider">
+                    Aplicar Filtros
+                </button>
+            </form>
+        </aside>
+
+        <section class="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <% if (produtos && produtos.length > 0) { %>
+                <% produtos.forEach(function(produto) { %>
+                <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
+                    <div class="bg-gradient-to-br from-purple-100 to-pink-100 aspect-square flex items-center justify-center text-4xl">
+                        💐
+                    </div>
+                    <div class="p-5 space-y-3 flex-grow flex flex-col justify-between">
+                        <div class="space-y-1">
+                            <span class="text-[9px] font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-md uppercase"><%= produto.tipo %></span>
+                            <h4 class="font-serif font-bold text-base text-slate-900"><%= produto.nome %></h4>
+                            <p class="text-xs text-slate-400 line-clamp-2"><%= produto.descricao %></p>
+                        </div>
+                        <div class="pt-2 flex flex-col space-y-2 border-t border-slate-50">
+                            <div class="flex items-center justify-between">
+                                <span class="font-mono font-bold text-slate-900 text-sm">R$ <%= produto.preco.toFixed(2) %></span>
+                                <a href="/produto/<%= produto.id %>" class="text-[11px] font-bold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-xl hover:bg-purple-100 transition-all">
+                                    Ver Detalhes
+                                </a>
+                            </div>
+                            <form action="/adicionar_carrinho" method="POST" class="w-full">
+                                <input type="hidden" name="produto_id" value="<%= produto.id %>">
+                                <button type="submit" class="w-full text-[11px] font-bold text-white bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded-xl transition-all uppercase tracking-wider">
+                                    🛒 Adicionar ao Carrinho
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            <% } else { %>
+            <div class="col-span-full py-16 text-center text-xs text-slate-400 italic bg-white border border-purple-100 rounded-3xl">
+                Nenhum buquê encontrado no catálogo.
+            </div>
+            <% } %>
+        </section>
+    </main>
+
+    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white mt-12">
+        &copy; 2026 Flora Atelier • Catálogo de Engenharia e Vendas.
+    </footer>
+</body>
+</html>

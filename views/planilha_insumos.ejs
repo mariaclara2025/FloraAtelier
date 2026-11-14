@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Atelier - Cadastro de Insumos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f5f0ff',
+                            100: '#ebdeff',
+                            200: '#dac2ff',
+                            300: '#c199ff',
+                            400: '#a366ff',
+                            500: '#8b33ff',
+                            600: '#751ae6',
+                            700: '#6010bf',
+                            800: '#500e9e',
+                            950: '#1b003a',
+                        },
+                        accent: {
+                            pink: '#f472b6',
+                            lavender: '#e9d5ff',
+                            emerald: '#10b981',
+                            rose: '#f43f5e',
+                            amber: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">📦</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide bg-gradient-to-r from-brand-600 to-accent-pink bg-clip-text text-transparent">Flora Engenharia</span>
+            </div>
+            <a href="/dashboard" class="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors flex items-center space-x-1">
+                <span>←</span> <span>Voltar ao Painel</span>
+            </a>
+        </div>
+    </nav>
+
+    <main class="max-w-5xl mx-auto px-6 py-8 w-full flex-grow space-y-8">
+        
+        <section class="bg-white border border-purple-100 rounded-3xl shadow-sm p-6 md:p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h2 class="font-serif text-xl font-bold text-slate-900">Registrar Lote de Matéria-Prima</h2>
+                <p class="text-xs text-slate-400">Insira os dados da nota ou compra. O sistema dividirá o custo total pela quantidade para obter o preço por centímetro ou unidade.</p>
+            </div>
+
+            <form action="/planilha_insumos" method="POST" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="flex flex-col space-y-1.5 md:col-span-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Descrição do Insumo</label>
+                        <input type="text" name="nome" required placeholder="Ex: Haste Chenille Verde (Lote 100x)" 
+                            class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm transition-all outline-none">
+                    </div>
+
+                    <div class="flex flex-col space-y-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Quantidade no Lote</label>
+                        <input type="number" name="qtd_total" required placeholder="Ex: 100 (Unid. ou Metros)" 
+                            class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm transition-all outline-none">
+                    </div>
+
+                    <div class="flex flex-col space-y-1.5">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Custo Total do Lote (R$)</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3.5 text-sm text-slate-400 font-medium">R$</span>
+                            <input type="number" step="0.01" name="custo_total" required placeholder="0,00" 
+                                class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl pl-10 pr-4 py-3 text-sm transition-all outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                    <button type="submit" 
+                        class="w-full md:w-auto bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-6 py-3.5 rounded-xl transition-all shadow-sm text-center cursor-pointer uppercase tracking-wider">
+                        Cadastrar e Calcular Preço Unitário
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <section class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                    <h2 class="font-serif text-xl font-bold text-slate-900">Estoque Base de Insumos</h2>
+                    <p class="text-xs text-slate-400">Estes valores unitários servem de base para a montagem e receitas das tuas flores artesanais.</p>
+                </div>
+                <div class="bg-amber-50 border border-amber-100 text-amber-800 text-[11px] px-3 py-1.5 rounded-xl font-medium w-max">
+                    💡 Valores com 4 casas decimais para alta precisão!
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
+                            <th class="py-4 px-6">Insumo Puro</th>
+                            <th class="py-4 px-6 text-center">Qtd. Adquirida</th>
+                            <th class="py-4 px-6">Custo do Lote</th>
+                            <th class="py-4 px-6 text-right">Preço Unitário (Calculado)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        {% for insumo in insumos %}
+                        <tr class="hover:bg-slate-50/40 transition-colors">
+                            <td class="py-4 px-6 font-semibold text-slate-900">{{ insumo.nome }}</td>
+                            <td class="py-4 px-6 text-center font-mono text-xs text-slate-600 bg-slate-50/30">{{ insumo.qtd_total }}</td>
+                            <td class="py-4 px-6 text-slate-600">R$ {{ "%.2f"|format(insumo.custo_total) }}</td>
+                            <td class="py-4 px-6 text-right bg-purple-50/20">
+                                <strong class="font-mono text-brand-600 text-sm">R$ {{ "%.4f"|format(insumo.preco_unitario) }}</strong>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="py-12 text-center text-xs text-slate-400 italic">
+                                Nenhum insumo cadastrado na base de engenharia. Começa registrando as tuas compras acima!
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white mt-12">
+        &copy; 2026 Flora Atelier • Módulo de Engenharia e Custos Restrito.
+    </footer>
+
+</body>
+</html>

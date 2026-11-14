@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flora Atelier - Novo Produto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
+    <main class="max-w-2xl mx-auto px-6 py-12 w-full flex-grow">
+        <div class="bg-white border border-purple-100 rounded-3xl shadow-sm p-8 space-y-6">
+            <div class="border-b border-slate-100 pb-4">
+                <h1 class="font-serif text-xl font-bold text-slate-900">Cadastrar Novo Produto</h1>
+                <p class="text-xs text-slate-400">Adicione novos buquês ou flores de chenille ao catálogo.</p>
+            </div>
+
+            <form action="/novo_produto" method="POST" class="space-y-4">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Nome do Produto</label>
+                    <input type="text" name="nome" required placeholder="Ex: Buquê Girassol Van Gogh" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none">
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-500 uppercase">Descrição</label>
+                    <textarea name="descricao" rows="3" placeholder="Detalhes dos materiais..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Preço (R$)</label>
+                        <input type="number" step="0.01" name="preco" required placeholder="0.00" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none font-mono">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Categoria / Tipo</label>
+                        <input type="text" name="tipo" required placeholder="Buquê ou Flor Avulsa" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none">
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-4">
+                    <a href="/dashboard" class="w-1/3 bg-slate-100 text-slate-600 font-bold text-xs py-3.5 rounded-xl text-center uppercase tracking-wider">Cancelar</a>
+                    <button type="submit" class="w-2/3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</body>
+</html>
