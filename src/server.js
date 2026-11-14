@@ -2,7 +2,8 @@ const express = require('express');
 const session = require('express-session');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
-
+const { prototype } = require('stream');
+const port = 3000
 const prisma = new PrismaClient();
 const app = express();
 
@@ -333,8 +334,7 @@ app.post('/custos', verificarLogado, verificarAdmin, async (req, res) => {
     }
 });
 
-// Inicialização da Aplicação
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Flora Atelier rodando com Node.js + Express + EJS na porta ${PORT}`);
+
+app.listen(port, () => {
+    console.log(`Flora Atelier rodando: http://localhost:${port}`);
 });
