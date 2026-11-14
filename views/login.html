@@ -1,19 +1,16 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flora Atelier - Entrar</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gradient-to-br from-purple-50 via-slate-50 to-pink-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
-    <main class="flex-grow flex items-center justify-center px-6 py-12">
-        <div class="bg-white border border-purple-100 rounded-3xl shadow-xl p-8 max-w-md w-full space-y-6">
+<div class="bg-white border border-purple-100 rounded-3xl shadow-xl p-8 max-w-md w-full space-y-6">
             <div class="text-center space-y-2">
                 <span class="text-4xl">🔮</span>
                 <h1 class="font-serif font-black text-2xl tracking-wide text-purple-700">Flora Atelier</h1>
                 <p class="text-xs text-slate-400">Entre para acompanhar as suas encomendas.</p>
             </div>
+
+            <!-- ADICIONADO: Alerta de Mensagem -->
+            <% if (typeof mensagem !== 'undefined' && mensagem) { %>
+                <div class="bg-rose-50 border border-rose-100 text-rose-600 text-xs px-4 py-3 rounded-xl font-medium text-center">
+                    <%= mensagem %>
+                </div>
+            <% } %>
 
             <form action="/login" method="POST" class="space-y-4">
                 <div class="flex flex-col space-y-1.5">
@@ -28,14 +25,8 @@
                     Entrar na Conta
                 </button>
             </form>
-                <% if (typeof mensagem !== 'undefined' && mensagem) { %>
-                <p><%= mensagem %></p>
-                <% } %>
 
             <div class="border-t border-slate-100 pt-4 text-center text-xs text-slate-400">
                 Ainda não tem uma conta? <a href="/cadastro" class="text-purple-600 font-bold hover:underline">Cadastre-se aqui</a>
             </div>
         </div>
-    </main>
-</body>
-</html>

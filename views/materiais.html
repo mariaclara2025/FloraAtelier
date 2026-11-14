@@ -3,143 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flora Atelier - Gerenciar Materiais</title>
+    <title>Flora Atelier - Gestão de Materiais</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f5f0ff',
-                            100: '#ebdeff',
-                            200: '#dac2ff',
-                            300: '#c199ff',
-                            400: '#a366ff',
-                            500: '#8b33ff',
-                            600: '#751ae6',
-                            700: '#6010bf',
-                            800: '#500e9e',
-                            950: '#1b003a',
-                        },
-                        accent: {
-                            pink: '#f472b6',
-                            lavender: '#e9d5ff',
-                            emerald: '#10b981',
-                            rose: '#f43f5e'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
-        <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <span class="text-2xl">🔮</span>
-                <span class="font-serif font-extrabold text-xl tracking-wide bg-gradient-to-r from-brand-600 to-accent-pink bg-clip-text text-transparent">Flora Admin</span>
-            </div>
-            <a href="/dashboard" class="text-xs font-semibold text-brand-600 hover:text-brand-700 transition-colors flex items-center space-x-1">
-                <span>←</span> <span>Voltar ao Painel</span>
-            </a>
+    <nav class="bg-white border-b border-purple-100 px-6 py-4">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <span class="font-serif font-extrabold text-xl text-purple-700">Controle de Materiais</span>
+            <a href="/dashboard" class="text-xs font-semibold text-purple-600 hover:underline">← Voltar ao Dashboard</a>
         </div>
     </nav>
 
-    <main class="max-w-4xl mx-auto px-6 py-8 w-full flex-grow space-y-8">
-        
-        <section class="bg-white border border-purple-100 rounded-3xl shadow-sm p-6 md:p-8 space-y-6">
-            <div class="border-b border-slate-100 pb-4">
-                <h2 class="font-serif text-xl font-bold text-slate-900">Cadastrar Insumos para Personalização</h2>
-                <p class="text-xs text-slate-400">Adicione novos materiais que ficarão visíveis para escolha no formulário de Encomenda Personalizada do cliente.</p>
-            </div>
-
-            <form action="/materiais" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div class="flex flex-col space-y-1.5 col-span-1 md:col-span-3">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Nome do Material</label>
-                    <input type="text" name="nome" required placeholder="Ex: Fio de Chenille Grosso, Papel Kraft Acetinado" 
-                        class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm transition-all outline-none">
-                </div>
-
-                <div class="flex flex-col space-y-1.5">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Tipo / Categoria</label>
-                    <select name="tipo" required 
-                        class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm transition-all outline-none appearance-none cursor-pointer">
-                        <option value="Flor de Chenille">Flor de Chenille</option>
-                        <option value="Embalagem">Embalagem / Papel</option>
-                        <option value="Fita">Fita de Acabamento</option>
-                    </select>
-                </div>
-
-                <div class="flex flex-col space-y-1.5">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cor / Variação</label>
-                    <input type="text" name="cor" required placeholder="Ex: Rosa Bebê, Azul Royal, Ouro" 
-                        class="w-full bg-slate-50 border border-slate-200 focus:border-brand-300 focus:bg-white focus:ring-2 focus:ring-brand-100 rounded-xl px-4 py-3 text-sm transition-all outline-none">
-                </div>
-
+    <main class="max-w-5xl mx-auto px-6 py-8 w-full flex-grow space-y-6">
+        <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
                 <div>
-                    <button type="submit" 
-                        class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold text-sm px-5 py-3 rounded-xl transition-all shadow-sm text-center cursor-pointer">
-                        Cadastrar Material
-                    </button>
+                    <h2 class="font-serif text-xl font-bold text-slate-900">Lista de Materiais & Hastes</h2>
+                    <p class="text-xs text-slate-400">Acompanhe os itens disponíveis para a criação dos buquês.</p>
                 </div>
-            </form>
-        </section>
-
-        <section class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden">
-            <div class="p-6 md:p-8 border-b border-slate-100">
-                <h2 class="font-serif text-xl font-bold text-slate-900">Materiais Disponíveis para Clientes</h2>
-                <p class="text-xs text-slate-400">Esta é a lista atual de itens cadastrados no acervo ativo da loja.</p>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-400 text-[11px] font-bold uppercase tracking-wider">
-                            <th class="py-4 px-6 w-1/3">Tipo</th>
-                            <th class="py-4 px-6 w-1/3">Nome do Material</th>
-                            <th class="py-4 px-6 w-1/3">Cor</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
-                        {% for mat in materiais %}
-                        <tr class="hover:bg-slate-50/40 transition-colors">
-                            <td class="py-4 px-6">
-                                <span class="bg-purple-50 text-brand-600 text-[11px] px-2.5 py-1 rounded-full font-semibold border border-purple-100">
-                                    {{ mat.tipo }}
-                                </span>
-                            </td>
-                            <td class="py-4 px-6 font-semibold text-slate-900">{{ mat.nome }}</td>
-                            <td class="py-4 px-6">
-                                <div class="flex items-center space-x-2">
-                                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-slate-300 border border-slate-400/20"></span>
-                                    <span class="text-slate-600">{{ mat.cor }}</span>
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="3" class="py-8 text-center text-xs text-slate-400 italic">
-                                Nenhum material cadastrado para personalização ainda.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            <!-- Alerta de Mensagem se houver -->
+            <% if (typeof mensagem !== 'undefined' && mensagem) { %>
+                <div class="bg-purple-50 border border-purple-200 text-purple-700 text-xs px-4 py-3 rounded-xl font-medium">
+                    <%= mensagem %>
+                </div>
+            <% } %>
 
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
+                        <th class="py-3 px-4">Material</th>
+                        <th class="py-3 px-4">Categoria</th>
+                        <th class="py-3 px-4 text-center">Quantidade</th>
+                        <th class="py-3 px-4 text-right">Custo Unitário</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-sm">
+                    <% if (typeof materiais !== 'undefined' && materiais && materiais.length > 0) { %>
+                        <% materiais.forEach(function(mat) { %>
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3 px-4 font-semibold text-slate-900"><%= mat.nome %></td>
+                            <td class="py-3 px-4 text-xs text-purple-600 uppercase font-semibold"><%= mat.categoria %></td>
+                            <td class="py-3 px-4 text-center font-mono text-slate-700"><%= mat.quantidade %></td>
+                            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">R$ <%= mat.custo_unitario.toFixed(2) %></td>
+                        </tr>
+                        <% }); %>
+                    <% } else { %>
+                    <tr>
+                        <td colspan="4" class="py-12 text-center text-xs text-slate-400 italic">Nenhum material cadastrado no sistema.</td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
     </main>
 
-    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white mt-12">
-        &copy; 2026 Flora Atelier • Painel de Administração Restrito.
+    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
+        &copy; 2026 Flora Atelier • Gestão de Materiais.
     </footer>
 
 </body>
