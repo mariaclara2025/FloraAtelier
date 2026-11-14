@@ -5,78 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flora Atelier - Pedido Confirmado</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f5f0ff',
-                            100: '#ebdeff',
-                            200: '#dac2ff',
-                            300: '#c199ff',
-                            400: '#a366ff',
-                            500: '#8b33ff',
-                            600: '#751ae6',
-                            700: '#6010bf',
-                            800: '#500e9e',
-                            950: '#1b003a',
-                        },
-                        accent: {
-                            pink: '#f472b6',
-                            lavender: '#e9d5ff'
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif']
-                    }
-                }
-            }
-        }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght=600;700;800&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
-
-    <div class="hidden md:block"></div>
-
-    <main class="max-w-md mx-auto px-6 py-12 w-full flex-grow flex items-center justify-center">
-        <div class="bg-white border border-purple-100 rounded-3xl shadow-xl p-8 text-center space-y-6 w-full transform transition-all hover:scale-[1.01]">
-            
-            <div class="mx-auto w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-3xl text-emerald-500 shadow-inner border border-emerald-100">
-                ✓
-            </div>
-
-            <div class="space-y-2">
-                <h1 class="font-serif text-2xl md:text-3xl font-black text-slate-900">
-                    Pedido Realizado!
-                </h1>
-                <p class="text-xs md:text-sm text-slate-500 leading-relaxed">
-                    O teu pedido foi registado com sucesso no ecossistema do **Flora Atelier**. O nosso artesão já foi notificado e a produção do teu buquê começará em breve!
-                </p>
-            </div>
-
-            <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-left space-y-1">
-                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Acompanhamento</span>
-                <p class="text-xs text-slate-600 leading-normal">
-                    Podes monitorizar o estado de produção e entrega do teu arranjo acedendo à secção <span class="font-semibold text-brand-600">Meus Pedidos</span> na tua barra de navegação.
-                </p>
-            </div>
-
-            <div class="pt-2">
-                <a href="/catalogo" 
-                   class="inline-block w-full bg-brand-500 text-white font-semibold text-xs py-3.5 rounded-xl hover:bg-brand-600 shadow-md shadow-brand-100 transition-all text-center">
-                    Voltar ao Catálogo
-                </a>
-            </div>
-
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between items-center justify-center p-6">
+    <div class="bg-white border border-purple-100 rounded-3xl shadow-sm p-8 max-w-md w-full text-center space-y-6">
+        <span class="text-5xl inline-block">🎉</span>
+        <div class="space-y-2">
+            <h1 class="font-serif text-2xl font-bold text-slate-900">Pedido Confirmado!</h1>
+            <p class="text-xs text-slate-400">Obrigado por adquirir nossos buquês de chenille artesanais. Seu pedido foi enviado para análise com sucesso.</p>
         </div>
-    </main>
-
-    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
-        &copy; 2026 Flora Atelier. Obrigado pela preferência!
+        <div class="pt-4 flex flex-col gap-3">
+            <a href="/catalogo" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3.5 rounded-xl transition-all uppercase tracking-wider">
+                Voltar ao Catálogo
+            </a>
+            <a href="/meus_pedidos" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs py-3.5 rounded-xl transition-all uppercase tracking-wider">
+                Ver Meus Pedidos
+            </a>
+        </div>
+    </div>
+    <footer class="text-slate-400 text-[11px] py-6 text-center">
+        &copy; 2026 Flora Atelier
     </footer>
-
 </body>
 </html>

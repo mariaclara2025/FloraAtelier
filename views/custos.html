@@ -17,6 +17,14 @@
     <main class="max-w-5xl mx-auto px-6 py-8 w-full flex-grow grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         <div class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-4">
             <h3 class="font-serif text-lg font-bold text-slate-900">Novo Custo / Insumo</h3>
+
+            <!-- Alerta de Mensagem -->
+            <% if (typeof mensagem !== 'undefined' && mensagem) { %>
+                <div class="bg-purple-50 border border-purple-200 text-purple-700 text-xs px-4 py-3 rounded-xl font-medium">
+                    <%= mensagem %>
+                </div>
+            <% } %>
+
             <form action="/custos" method="POST" class="space-y-4">
                 <div class="space-y-1">
                     <label class="text-[10px] font-bold text-slate-400 uppercase">Descrição do Gasto</label>
@@ -45,7 +53,7 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-sm">
-                    <% if (lista_custos && lista_custos.length > 0) { %>
+                    <% if (typeof lista_custos !== 'undefined' && lista_custos && lista_custos.length > 0) { %>
                         <% lista_custos.forEach(function(c) { %>
                         <tr class="hover:bg-slate-50">
                             <td class="py-3 px-4 font-semibold text-slate-900"><%= c.descricao %></td>
