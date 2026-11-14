@@ -7,9 +7,10 @@ const prisma = new PrismaClient();
 const app = express();
 
 // Configurações do Servidor e Motor de Templates (EJS)
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, '../views'));
-
+app.set('views', path.join(__dirname, 'views'));
+app.engine('html', require('ejs').renderFile)
+app.set('views engine', 'html')
+app.use('/static', express.static(path.join(__dirname, 'views', 'static')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
