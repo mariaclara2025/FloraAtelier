@@ -13,7 +13,11 @@
             <h1 class="font-serif text-2xl font-bold text-slate-900">Pedido Confirmado!</h1>
             <p class="text-xs text-slate-400">Obrigado por adquirir nossos buquês de chenille artesanais. Seu pedido foi enviado para análise com sucesso.</p>
         </div>
+
         <div class="pt-4 flex flex-col gap-3">
+            <a href="<%= linkWpp %>" target="_blank" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs py-3.5 rounded-xl transition-all uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm">
+                Enviar Pedido no WhatsApp
+            </a>
             <a href="/catalogo" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3.5 rounded-xl transition-all uppercase tracking-wider">
                 Voltar ao Catálogo
             </a>
@@ -21,6 +25,9 @@
                 Ver Meus Pedidos
             </a>
         </div>
+        <p class="text-[11px] text-slate-400 pt-2">
+            Pedido <strong>#<%= pedidoId %></strong> registrado! Em caso de dúvidas, envie uma mensagem para o nosso WhatsApp: <strong class="text-slate-600">(83) 98206-0613</strong>
+        </p>
     </div>
     <footer class="text-slate-400 text-[11px] py-6 text-center">
         &copy; 2026 Flora Atelier

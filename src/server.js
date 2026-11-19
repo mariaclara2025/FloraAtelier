@@ -193,15 +193,24 @@ app.get('/finalizar_compra', verificarLogado, async (req, res) => {
 
     const total = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
     try {
-        await prisma.pedido.create({
+        const novoPedido = await prisma.pedido.create({
             data: {
                 idCliente: req.session.usuarioId,
                 total: total,
                 status: 'Em Análise'
             }
         });
+
+        const listaItens = carrinho
+            .map(item => `• ${item.quantidade}x ${item.nome} (R$ ${(item.preco * item.quantidade).toFixed(2)})`)
+            .join('\n');
+
+        const mensagemWpp = `Olá! Acabei de fazer o pedido *#${novoPedido.id}* no *Flora Atelier* 🌸\n\n*Resumo do Pedido:*\n${listaItens}\n\n*Total:* R$ ${total.toFixed(2)}\n\nEm caso de dúvidas, gostaria de acompanhar por aqui!`;
+        
+       const numeroWpp = '5583982060613'; 
+const linkWpp = `https://wa.me/${numeroWpp}?text=${encodeURIComponent(mensagemWpp)}`;
         req.session.carrinho = [];
-        res.render('confirmacao');
+        res.render('confirmacao', { linkWpp, pedidoId: novoPedido.id });
     } catch (error) {
         res.status(500).send('Erro ao finalizar o pedido.');
     }
@@ -252,6 +261,8 @@ app.get('/novo_produto', verificarLogado, verificarAdmin, (req, res) => {
 app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
     const { nome, descricao, preco, imagem, tipo, tamanho, cor_principal } = req.body;
     try {
+        console.log("Entrou no try")
+        console.log(preco, typeof preco)
         await prisma.produto.create({
             data: {
                 nome,
@@ -260,11 +271,13 @@ app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
                 imagem: imagem || '',
                 tipo,
                 tamanho: tamanho || 'Padrão',
-                cor_principal: cor_principal || 'Variado'
+                corPrincipal: cor_principal || 'Variado'
             }
         });
+        console.log("Passou a ligação do banco")
         res.redirect('/dashboard');
     } catch (error) {
+        console.error(error)
         res.status(500).send('Erro ao cadastrar novo produto.');
     }
 });
