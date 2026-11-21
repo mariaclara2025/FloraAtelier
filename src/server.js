@@ -2,40 +2,76 @@ const express = require('express');
 const session = require('express-session');
 const { PrismaClient } = require('@prisma/client');
 const path = require('path');
-const { prototype } = require('stream');
-const port = 3000
+
+const {
+    salvarBuquePrecificado,
+    salvarInsumoERecalcular,
+    salvarFlorComReceita,
+    obterConfiguracao,
+    atualizarConfiguracaoERecalcular,
+    gerarResumoFinanceiro,
+    formatarMoedaBR
+} = require('./services/financeiro');
+const {
+    criarPedidoComBaixaEstoque,
+    atualizarStatusPedido
+} = require('./services/pedidos');
+const {
+    gerarRelatorioFinanceiroPdf
+} = require('./services/relatorioPdf');
+
 const prisma = new PrismaClient();
 const app = express();
-
+const port = process.env.PORT || 3000;
 
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 app.set('views', path.join(__dirname, '../views'));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(session({
     secret: 'flora-atelier-secret-key',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false } // Defina como true se usar HTTPS no Codespace
+    cookie: { secure: false }
 }));
+
+// Disponibiliza helpers úteis nas views .html (EJS)
+app.locals.formatarMoedaBR = formatarMoedaBR;
+
+// Helper para normalizar linhas dinâmicas de formulário (1 item vira array)
+function normalizarListaItens(ids, quantidades, chaveId) {
+    const arrIds = Array.isArray(ids) ? ids : (ids !== undefined ? [ids] : []);
+    const arrQtds = Array.isArray(quantidades) ? quantidades : (quantidades !== undefined ? [quantidades] : []);
+    const resultado = [];
+
+    for (let i = 0; i < arrIds.length; i++) {
+        if (arrIds[i] && arrQtds[i]) {
+            resultado.push({
+                [chaveId]: Number(arrIds[i]),
+                quantidade: Number(arrQtds[i])
+            });
+        }
+    }
+    return resultado;
+}
 
 // Middlewares de Autenticação e Permissão
 function verificarLogado(req, res, next) {
     if (req.session && req.session.usuarioId) {
         return next();
     }
-    res.redirect('/login');
+    return res.redirect('/login');
 }
 
 function verificarAdmin(req, res, next) {
-    if (req.session && req.session.tipo === 'Administrador') {
+    if (req.session && (req.session.tipo === 'Administrador' || req.session.tipo === 'Admin')) {
         return next();
     }
-    res.status(403).send('Acesso negado. Área restrita a administradores.');
+    return res.status(403).send('Acesso negado. Área restrita a administradores.');
 }
 
 // =======================================================
@@ -46,7 +82,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-    res.render('login');
+    res.render('login', { mensagem: null });
 });
 
 app.post('/login', async (req, res) => {
@@ -57,20 +93,21 @@ app.post('/login', async (req, res) => {
             req.session.usuarioId = usuario.id;
             req.session.nomeUsuario = usuario.nome;
             req.session.tipo = usuario.tipo;
-            console.log(req.session.usuarioId)
-            if (usuario.tipo === 'Administrador') {
+
+            if (usuario.tipo === 'Administrador' || usuario.tipo === 'Admin') {
                 return res.redirect('/dashboard');
             }
             return res.redirect('/catalogo');
         }
-        res.render('login', { mensagem: 'E-mail ou palavra-passe incorretos.' });
+        return res.render('login', { mensagem: 'E-mail ou palavra-passe incorretos.' });
     } catch (error) {
-        res.status(500).send('Erro interno ao processar o login.');
+        console.error(error);
+        return res.status(500).send('Erro interno ao processar o login.');
     }
 });
 
 app.get('/cadastro', (req, res) => {
-    res.render('cadastro');
+    res.render('cadastro', { mensagem: null });
 });
 
 app.post('/cadastro', async (req, res) => {
@@ -94,9 +131,10 @@ app.post('/cadastro', async (req, res) => {
         req.session.nomeUsuario = novoUsuario.nome;
         req.session.tipo = novoUsuario.tipo;
 
-        res.redirect('/catalogo');
+        return res.redirect('/catalogo');
     } catch (error) {
-        res.status(500).send('Erro ao criar conta de usuário.');
+        console.error(error);
+        return res.status(500).send('Erro ao criar conta de usuário.');
     }
 });
 
@@ -112,7 +150,7 @@ app.get('/logout', (req, res) => {
 app.get('/catalogo', verificarLogado, async (req, res) => {
     const { pesquisa, categoria, preco_max } = req.query;
     try {
-        let filtros = {};
+        const filtros = {};
         if (pesquisa) {
             filtros.nome = { contains: pesquisa };
         }
@@ -124,20 +162,22 @@ app.get('/catalogo', verificarLogado, async (req, res) => {
         }
 
         const produtos = await prisma.produto.findMany({ where: filtros });
-        res.render('catalogo', { produtos, nome_usuario: req.session.nomeUsuario });
+        return res.render('catalogo', { produtos, nome_usuario: req.session.nomeUsuario });
     } catch (error) {
-        res.status(500).send('Erro ao carregar o catálogo.');
+        console.error(error);
+        return res.status(500).send('Erro ao carregar o catálogo.');
     }
 });
 
 app.get('/produto/:id', verificarLogado, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     try {
         const produto = await prisma.produto.findUnique({ where: { id } });
         if (!produto) return res.status(404).send('Produto não encontrado.');
-        res.render('detalhe', { produto });
+        return res.render('detalhe', { produto });
     } catch (error) {
-        res.status(500).send('Erro ao carregar detalhes do produto.');
+        console.error(error);
+        return res.status(500).send('Erro ao carregar detalhes do produto.');
     }
 });
 
@@ -153,10 +193,10 @@ app.get('/carrinho', verificarLogado, (req, res) => {
 app.post('/adicionar_carrinho', verificarLogado, async (req, res) => {
     const { produto_id } = req.body;
     try {
-        const produto = await prisma.produto.findUnique({ where: { id: parseInt(produto_id) } });
+        const produto = await prisma.produto.findUnique({ where: { id: parseInt(produto_id, 10) } });
         if (produto) {
             if (!req.session.carrinho) req.session.carrinho = [];
-            let item = req.session.carrinho.find(i => i.id === produto.id);
+            const item = req.session.carrinho.find(i => i.id === produto.id);
             if (item) {
                 item.quantidade += 1;
             } else {
@@ -168,14 +208,15 @@ app.post('/adicionar_carrinho', verificarLogado, async (req, res) => {
                 });
             }
         }
-        res.redirect('/carrinho');
+        return res.redirect('/carrinho');
     } catch (error) {
-        res.status(500).send('Erro ao adicionar item ao carrinho.');
+        console.error(error);
+        return res.status(500).send('Erro ao adicionar item ao carrinho.');
     }
 });
 
 app.post('/remover_carrinho/:id', verificarLogado, (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     if (req.session.carrinho) {
         req.session.carrinho = req.session.carrinho.filter(i => i.id !== id);
     }
@@ -186,66 +227,84 @@ app.post('/limpar_carrinho', verificarLogado, (req, res) => {
     req.session.carrinho = [];
     res.redirect('/carrinho');
 });
-app.get('/info_compra',verificarLogado, (req,res) =>{
-    console.log("Aplicou rota info_compra do metodo get")
-    res.render("info_compra")
-})
+
+app.get('/info_compra', verificarLogado, (req, res) => {
+    res.render('info_compra');
+});
+
 app.post('/info_compra', verificarLogado, async (req, res) => {
     const { endereco, telefone, forma_pagamento } = req.body;
-
     try {
-        console.log("entrou rota info_compra do metodo post")
-        console.log(req.session.usuarioId)
-         console.log(req.session.usuarioId)
-        console.log(endereco)
-       const usuarioAtualizado = await prisma.usuario.update({
+        const usuarioAtualizado = await prisma.usuario.update({
             where: { id: req.session.usuarioId },
             data: { endereco, telefone }
         });
-        req.session.usuario = usuarioAtualizado
-        console.log(req.session.usuario)
-        req.session.forma_pagamento = forma_pagamento;
-            console.log("Aplicou rota info_compra do metodo post")
-        res.redirect('/finalizar_compra');
+        req.session.usuario = usuarioAtualizado;
+        req.session.forma_pagamento = forma_pagamento || 'Não informado';
+        return res.redirect('/finalizar_compra');
     } catch (error) {
         console.error(error);
-        res.redirect('/carrinho');
+        return res.redirect('/carrinho');
     }
 });
 
+// Cria o pedido com snapshot de custo/preço + baixa automática de insumos
 app.get('/finalizar_compra', verificarLogado, async (req, res) => {
     const carrinho = req.session.carrinho || [];
-    console.log("Aplicou rota finalizar_compra do metodo GET")
+    if (carrinho.length === 0) {
+        if (req.session.ultimoPedidoId) {
+            const ultimoId = req.session.ultimoPedidoId;
+            const ultimoLink = req.session.ultimoLinkWpp || '';
+            return res.render('confirmacao', { linkWpp: ultimoLink, pedidoId: ultimoId });
+        }
+        return res.redirect('/catalogo');
+    }
 
-    if (carrinho.length === 0) return res.redirect('/catalogo');
-
-    const total = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
     try {
-        const novoPedido = await prisma.pedido.create({
-         data: {
-        idCliente: req.session.usuario.id,
-        total: total,
-        status: 'Em Análise',
-        formaPagamento: req.session.forma_pagamento || 'Não informado'
-         }
-        });
-            const listaItens = carrinho
-            .map(item => `• ${item.quantidade}x ${item.nome} (R$ ${(item.preco * item.quantidade).toFixed(2)})`)
-            .join('\n');
-          
+        const itensPedido = carrinho.map(item => ({
+            produtoId: item.id,
+            quantidade: item.quantidade
+        }));
 
-       const mensagemWpp = `Olá! Gostaria de finalizar meu pedido #${novoPedido.id}:\n\n` +
+        const { pedido, alertasEstoqueBaixo } = await criarPedidoComBaixaEstoque({
+            idCliente: req.session.usuarioId,
+            itens: itensPedido,
+            status: 'Em Análise',
+            bloquearSemEstoque: false
+        });
+
+        const usuarioInfo = req.session.usuario || await prisma.usuario.findUnique({
+            where: { id: req.session.usuarioId }
+        });
+
+        const listaItens = pedido.itens
+            .map(item => `• ${item.quantidade}x ${item.produto.nome} (R$ ${(item.precoUnitario * item.quantidade).toFixed(2)})`)
+            .join('\n');
+
+        const formaPag = req.session.forma_pagamento || 'Não informado';
+        const mensagemWpp =
+            `Olá! Gostaria de finalizar meu pedido #${pedido.id}:\n\n` +
             `*Itens:*\n${listaItens}\n\n` +
-            `*Total:* R$ ${total.toFixed(2)}\n` +
-            `*Pagamento:* ${req.session.forma_pagamento}\n` +
-            `*Endereço:* ${req.session.usuario.endereco}\n` +
-            `*Contato:* ${req.session.usuario.telefone}`;      
-       const numeroWpp = '5583982060613'; 
-const linkWpp = `https://wa.me/${numeroWpp}?text=${encodeURIComponent(mensagemWpp)}`;
+            `*Total:* R$ ${Number(pedido.total).toFixed(2)}\n` +
+            `*Pagamento:* ${formaPag}\n` +
+            `*Endereço:* ${usuarioInfo?.endereco || 'Não informado'}\n` +
+            `*Contato:* ${usuarioInfo?.telefone || 'Não informado'}`;
+
+        const numeroWpp = '5583982060613';
+        const linkWpp = `https://wa.me/${numeroWpp}?text=${encodeURIComponent(mensagemWpp)}`;
+
         req.session.carrinho = [];
-        res.render('confirmacao', { linkWpp, pedidoId: novoPedido.id });
+        req.session.ultimoPedidoId = pedido.id;
+        req.session.ultimoLinkWpp = linkWpp;
+
+        return res.render('confirmacao', {
+            linkWpp,
+            pedidoId: pedido.id,
+            alertasEstoqueBaixo
+        });
     } catch (error) {
-        res.status(500).send('Erro ao finalizar o pedido.');
+        console.error('Erro ao finalizar pedido:', error);
+        return res.status(500).send(error.message || 'Erro ao finalizar o pedido.');
     }
 });
 
@@ -253,37 +312,252 @@ app.get('/meus_pedidos', verificarLogado, async (req, res) => {
     try {
         const pedidos = await prisma.pedido.findMany({
             where: { idCliente: req.session.usuarioId },
+            include: { itens: { include: { produto: true } } },
             orderBy: { id: 'desc' }
         });
-        res.render('meus_pedidos', { pedidos, nome_usuario: req.session.nomeUsuario });
+        return res.render('meus_pedidos', { pedidos, nome_usuario: req.session.nomeUsuario });
     } catch (error) {
-        res.status(500).send('Erro ao buscar seus pedidos.');
+        console.error(error);
+        return res.status(500).send('Erro ao buscar seus pedidos.');
     }
 });
 
 // =======================================================
-// PAINEL ADMINISTRATIVO E ENGENHARIA (CRUD)
+// PAINEL ADMINISTRATIVO, ENGENHARIA, FINANÇAS E PDF
 // =======================================================
 app.get('/dashboard', verificarLogado, verificarAdmin, async (req, res) => {
     try {
-        const produtos = await prisma.produto.findMany();
-        const pedidos = await prisma.pedido.findMany({ include: { cliente: true } });
-        const custos = await prisma.custo.findMany();
+        const [produtos, pedidos, resumoMensal] = await Promise.all([
+            prisma.produto.findMany(),
+            prisma.pedido.findMany({
+                include: { cliente: true },
+                orderBy: { id: 'desc' }
+            }),
+            gerarResumoFinanceiro({ tipo: 'mensal' })
+        ]);
 
-        const faturamento = pedidos.reduce((acc, p) => acc + p.total, 0);
-        const total_custos = custos.reduce((acc, c) => acc + c.valor, 0);
-        const lucro = faturamento - total_custos;
-
-        res.render('dashboard', {
+        return res.render('dashboard', {
             produtos,
             pedidos,
-            faturamento,
-            total_custos,
-            lucro,
+            faturamento: resumoMensal.faturamentoBruto,
+            custo_producao: resumoMensal.custoProducaoPedidos,
+            total_custos: resumoMensal.outrasDespesas,
+            lucro: resumoMensal.lucroLiquido,
+            margem_liquida: resumoMensal.margemLiquidaPct,
+            resumoMensal,
             nome_usuario: req.session.nomeUsuario
         });
     } catch (error) {
-        res.status(500).send('Erro ao carregar o dashboard administrativo.');
+        console.error(error);
+        return res.status(500).send('Erro ao carregar o dashboard administrativo.');
+    }
+});
+
+// Insumos / Materiais -> views/planilha_insumos.html
+app.get('/insumos', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const insumos = await prisma.insumo.findMany({ orderBy: { id: 'desc' } });
+        return res.render('planilha_insumos', {
+            insumos,
+            nome_usuario: req.session.nomeUsuario,
+            mensagem: req.query.ok ? 'Insumo salvo e custos recalculados!' : null
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao carregar insumos.');
+    }
+});
+
+app.post('/insumos', verificarLogado, verificarAdmin, async (req, res) => {
+    const { id, nome, qtd_total, qtd_disponivel, custo_total } = req.body;
+    try {
+        await salvarInsumoERecalcular({
+            id: id || undefined,
+            nome,
+            qtdTotal: qtd_total,
+            qtdDisponivel: qtd_disponivel !== '' ? qtd_disponivel : undefined,
+            custoTotal: custo_total
+        });
+        return res.redirect('/insumos?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send(error.message || 'Erro ao salvar insumo.');
+    }
+});
+
+app.post('/insumos/excluir/:id', verificarLogado, verificarAdmin, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    try {
+        await prisma.insumo.delete({ where: { id } });
+        return res.redirect('/insumos?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send('Não foi possível excluir o insumo (ele pode estar em uso em alguma flor ou buquê).');
+    }
+});
+
+// Flores -> views/planilha_flores.html
+app.get('/flores', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const [flores, insumos, config] = await Promise.all([
+            prisma.flor.findMany({
+                include: { insumos: { include: { insumo: true } } },
+                orderBy: { id: 'desc' }
+            }),
+            prisma.insumo.findMany({ orderBy: { nome: 'asc' } }),
+            obterConfiguracao()
+        ]);
+
+        return res.render('planilha_flores', {
+            flores,
+            insumos,
+            config,
+            nome_usuario: req.session.nomeUsuario,
+            mensagem: req.query.ok ? 'Flor salva e custo calculado automaticamente!' : null
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao carregar flores.');
+    }
+});
+
+app.post('/flores', verificarLogado, verificarAdmin, async (req, res) => {
+    const { id, nome, tempo_confeccao_min, insumo_id, quantidade_insumo } = req.body;
+    try {
+        const itensInsumos = normalizarListaItens(insumo_id, quantidade_insumo, 'insumoId');
+        await salvarFlorComReceita({
+            id: id || undefined,
+            nome,
+            tempoConfeccaoMin: tempo_confeccao_min,
+            itensInsumos
+        });
+        return res.redirect('/flores?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send(error.message || 'Erro ao salvar flor.');
+    }
+});
+
+app.post('/flores/excluir/:id', verificarLogado, verificarAdmin, async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    try {
+        await prisma.flor.delete({ where: { id } });
+        return res.redirect('/flores?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send('Não foi possível excluir a flor (ela pode estar em uso em algum buquê).');
+    }
+});
+
+// Buquês e Precificação -> views/precificacao.html
+app.get('/precificacao', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const [produtos, flores, insumos, config] = await Promise.all([
+            prisma.produto.findMany({
+                include: {
+                    flores: { include: { flor: true } },
+                    insumos: { include: { insumo: true } }
+                },
+                orderBy: { id: 'desc' }
+            }),
+            prisma.flor.findMany({ orderBy: { nome: 'asc' } }),
+            prisma.insumo.findMany({ orderBy: { nome: 'asc' } }),
+            obterConfiguracao()
+        ]);
+
+        return res.render('precificacao', {
+            produtos,
+            flores,
+            insumos,
+            config,
+            nome_usuario: req.session.nomeUsuario,
+            mensagem: req.query.ok ? 'Precificação atualizada com sucesso!' : null
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao carregar tela de precificação.');
+    }
+});
+
+app.post('/configuracao-financeira', verificarLogado, verificarAdmin, async (req, res) => {
+    const { valor_hora, margem_padrao } = req.body;
+    try {
+        await atualizarConfiguracaoERecalcular({
+            valorHora: valor_hora,
+            margemPadrao: margem_padrao
+        });
+        return res.redirect('/precificacao?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send('Erro ao atualizar configuração financeira.');
+    }
+});
+
+app.post('/precificacao/buque', verificarLogado, verificarAdmin, async (req, res) => {
+    const {
+        id,
+        nome,
+        descricao,
+        tipo,
+        imagem,
+        tamanho,
+        cor_principal,
+        tempo_montagem_min,
+        margem_lucro,
+        preco_manual,
+        preco_informado,
+        flor_id,
+        quantidade_flor,
+        insumo_extra_id,
+        quantidade_insumo_extra
+    } = req.body;
+
+    try {
+        const itensFlores = normalizarListaItens(flor_id, quantidade_flor, 'florId');
+        const itensInsumos = normalizarListaItens(insumo_extra_id, quantidade_insumo_extra, 'insumoId');
+        const usarManual = preco_manual === 'true' || preco_manual === 'on' || preco_manual === true;
+
+        await salvarBuquePrecificado({
+            id: id || undefined,
+            nome,
+            descricao,
+            tipo: tipo || 'Buquê Completo',
+            imagem: imagem || '',
+            tamanho: tamanho || 'Médio',
+            corPrincipal: cor_principal || 'Variado',
+            tempoMontagemMin: tempo_montagem_min,
+            margemLucro: margem_lucro,
+            precoManual: usarManual,
+            precoInformado: preco_informado,
+            itensFlores,
+            itensInsumos
+        });
+
+        return res.redirect('/precificacao?ok=1');
+    } catch (error) {
+        console.error(error);
+        return res.status(400).send(error.message || 'Erro ao salvar buquê e precificação.');
+    }
+});
+
+// Relatório PDF semanal ou mensal
+app.get('/relatorio.pdf', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const { tipo = 'semanal', ano, mes, dataInicio, dataFim } = req.query;
+        const { buffer, nomeArquivo } = await gerarRelatorioFinanceiroPdf({
+            tipo,
+            ano,
+            mes,
+            dataInicio,
+            dataFim
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivo}"`);
+        return res.send(buffer);
+    } catch (error) {
+        console.error('Erro ao gerar PDF:', error);
+        return res.status(500).send('Erro ao gerar o relatório financeiro em PDF.');
     }
 });
 
@@ -292,94 +566,114 @@ app.get('/novo_produto', verificarLogado, verificarAdmin, (req, res) => {
 });
 
 app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
-    const { nome, descricao, preco, imagem, tipo, tamanho, cor_principal } = req.body;
+    const {
+        nome,
+        descricao,
+        preco,
+        imagem,
+        tipo,
+        tamanho,
+        cor_principal,
+        tempo_montagem_min,
+        margem_lucro,
+        preco_manual
+    } = req.body;
+
+    const usarPrecoManual = preco_manual === 'true' || preco_manual === 'on' || preco_manual === true;
+
     try {
-        console.log("Entrou no try")
-        console.log(preco, typeof preco)
-        await prisma.produto.create({
-            data: {
-                nome,
-                descricao,
-                preco: parseFloat(preco),
-                imagem: imagem || '',
-                tipo,
-                tamanho: tamanho || 'Padrão',
-                corPrincipal: cor_principal || 'Variado'
-            }
+        await salvarBuquePrecificado({
+            nome,
+            descricao,
+            tipo,
+            imagem: imagem || '',
+            tamanho: tamanho || 'Padrão',
+            corPrincipal: cor_principal || 'Variado',
+            tempoMontagemMin: Number(tempo_montagem_min) || 0,
+            margemLucro: margem_lucro !== undefined && margem_lucro !== '' ? Number(margem_lucro) : undefined,
+            precoManual: usarPrecoManual,
+            precoInformado: preco !== undefined && preco !== '' ? Number(preco) : undefined
         });
-        console.log("Passou a ligação do banco")
-        res.redirect('/dashboard');
+
+        return res.redirect('/dashboard');
     } catch (error) {
-        console.error(error)
-        res.status(500).send('Erro ao cadastrar novo produto.');
+        console.error(error);
+        return res.status(500).send('Erro ao cadastrar novo produto.');
     }
 });
 
 app.get('/excluir_produto/:id', verificarLogado, verificarAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     try {
         await prisma.produto.delete({ where: { id } });
-        res.redirect('/dashboard');
+        return res.redirect('/dashboard');
     } catch (error) {
-        res.status(500).send('Erro ao excluir produto.');
+        console.error(error);
+        return res.status(500).send('Erro ao excluir produto.');
     }
 });
 
 app.get('/pedidos', verificarLogado, verificarAdmin, async (req, res) => {
     try {
-        const pedidosDb = await prisma.pedido.findMany({ include: { cliente: true }, orderBy: { id: 'desc' } });
+        const pedidosDb = await prisma.pedido.findMany({
+            include: { cliente: true },
+            orderBy: { id: 'desc' }
+        });
         const pedidos = pedidosDb.map(p => ({
             id: p.id,
-            data: 'Recentemente',
+            data: p.data ? new Date(p.data).toLocaleDateString('pt-BR') : 'Recentemente',
             nome_cliente: p.cliente ? p.cliente.nome : 'Cliente',
             total: p.total,
+            custoTotal: p.custoTotal,
+            lucroEstimado: p.lucroEstimado,
             status: p.status
         }));
-        res.render('pedidos', { pedidos, nome_usuario: req.session.nomeUsuario });
+        return res.render('pedidos', { pedidos, nome_usuario: req.session.nomeUsuario });
     } catch (error) {
-        res.status(500).send('Erro ao carregar lista de pedidos.');
+        console.error(error);
+        return res.status(500).send('Erro ao carregar lista de pedidos.');
     }
 });
 
 app.post('/atualizar_pedido/:id', verificarLogado, verificarAdmin, async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     const { status } = req.body;
     try {
-        await prisma.pedido.update({
-            where: { id },
-            data: { status }
-        });
-        res.redirect('/pedidos');
+        await atualizarStatusPedido(id, status);
+        return res.redirect('/pedidos');
     } catch (error) {
-        res.status(500).send('Erro ao atualizar status do pedido.');
+        console.error(error);
+        return res.status(500).send('Erro ao atualizar status do pedido.');
     }
 });
 
 app.get('/custos', verificarLogado, verificarAdmin, async (req, res) => {
     try {
         const lista_custos = await prisma.custo.findMany({ orderBy: { id: 'desc' } });
-        res.render('custos', { lista_custos });
+        return res.render('custos', { lista_custos });
     } catch (error) {
-        res.status(500).send('Erro ao carregar custos.');
+        console.error(error);
+        return res.status(500).send('Erro ao carregar custos.');
     }
 });
 
 app.post('/custos', verificarLogado, verificarAdmin, async (req, res) => {
-    const { descricao, valor, data } = req.body;
+    const { descricao, categoria, valor, data } = req.body;
     try {
         await prisma.custo.create({
             data: {
                 descricao,
-                valor: parseFloat(valor),
-                data
+                categoria: categoria || 'Operacional',
+                valor: parseFloat(valor) || 0,
+                data: data ? new Date(data) : new Date()
             }
         });
-        res.redirect('/custos');
+        return res.redirect('/custos');
     } catch (error) {
-        res.status(500).send('Erro ao registrar custo.');
+        console.error(error);
+        return res.status(500).send('Erro ao registrar custo.');
     }
 });
-
 
 app.listen(port, () => {
     console.log(`Flora Atelier rodando: http://localhost:${port}`);
