@@ -3,62 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flora Atelier - Planilha de Flores</title>
+    <title>Flora Atelier - Composição de Flores</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <nav class="bg-white border-b border-purple-100 px-6 py-4">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <span class="font-serif font-extrabold text-xl text-purple-700">Planilha de Flores</span>
-            <a href="/dashboard" class="text-xs font-semibold text-purple-600 hover:underline">← Voltar ao Dashboard</a>
+    <nav class="bg-white border-b border-purple-100 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🌻</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide text-purple-700">Flora Admin • Flores</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-5 text-xs font-semibold">
+                <a href="/dashboard" class="text-slate-600 hover:text-purple-600">Dashboard</a>
+                <a href="/insumos" class="text-slate-600 hover:text-purple-600">Insumos</a>
+                <a href="/flores" class="text-purple-700 underline">Flores</a>
+                <a href="/precificacao" class="text-slate-600 hover:text-purple-600">Buquês & Precificação</a>
+                <a href="/custos" class="text-slate-600 hover:text-purple-600">Custos</a>
+                <a href="/logout" class="text-rose-500 hover:underline">Sair</a>
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto px-6 py-8 w-full flex-grow space-y-6">
-        <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+    <main class="max-w-7xl mx-auto px-6 py-8 w-full flex-grow space-y-8">
+        <% if (typeof mensagem !== 'undefined' && mensagem) { %>
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold px-4 py-3 rounded-2xl">
+                <%= mensagem %>
+            </div>
+        <% } %>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Formulário de Flor -->
+            <form action="/flores" method="POST" class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <h2 class="font-serif text-lg font-bold text-slate-900">Montar Flor e Calcular Custo</h2>
+                <p class="text-xs text-slate-400">Valor/hora atual: <strong class="text-purple-700">R$ <%= Number(config?.valorHora || 0).toFixed(2) %></strong>. Adicione os insumos usados (hastes, arame, fita floral, cola quente...).</p>
+
                 <div>
-                    <h2 class="font-serif text-xl font-bold text-slate-900">Receitas de Flores Cadastradas</h2>
-                    <p class="text-xs text-slate-400">Consulte as flores avulsas de chenille e a quantidade de hastes utilizadas.</p>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nome da Flor</label>
+                    <input type="text" name="nome" required placeholder="Ex.: Girassol, Margarida, Matinho Médio" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Tempo de Confecção da Flor (min)</label>
+                    <input type="number" min="0" id="tempo_confeccao_min" name="tempo_confeccao_min" value="0" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-slate-600">Insumos Utilizados</label>
+                        <button type="button" onclick="adicionarLinhaInsumo()" class="text-xs font-bold text-purple-600 hover:underline">+ Adicionar Insumo</button>
+                    </div>
+
+                    <div id="lista_insumos_flor" class="space-y-2">
+                        <div class="flex gap-2 linha-insumo">
+                            <select name="insumo_id" class="flex-1 border border-slate-200 rounded-xl px-2 py-2 text-xs select-insumo">
+                                <option value="">Selecione um insumo...</option>
+                                <% insumos.forEach(function(ins) { %>
+                                    <option value="<%= ins.id %>" data-preco="<%= Number(ins.precoUnitario || 0) %>">
+                                        <%= ins.nome %> (R$ <%= Number(ins.precoUnitario || 0).toFixed(2) %>/un)
+                                    </option>
+                                <% }); %>
+                            </select>
+                            <input type="number" step="0.01" min="0.01" name="quantidade_insumo" placeholder="Qtd" class="w-20 border border-slate-200 rounded-xl px-2 py-2 text-xs qtd-insumo">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-purple-50 border border-purple-100 rounded-2xl p-3 space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-600">Materiais:</span>
+                        <span id="prev_mat_flor" class="font-mono font-bold text-slate-800">R$ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-600">Mão de obra:</span>
+                        <span id="prev_mo_flor" class="font-mono font-bold text-slate-800">R$ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm pt-1 border-t border-purple-200">
+                        <span class="font-bold text-purple-900">Custo Total da Flor:</span>
+                        <span id="prev_total_flor" class="font-mono font-bold text-purple-700">R$ 0.00</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3 rounded-xl transition-all">
+                    Salvar Flor e Atualizar Buquês
+                </button>
+            </form>
+
+            <!-- Lista de Flores -->
+            <div class="lg:col-span-2 bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <h2 class="font-serif text-lg font-bold text-slate-900">Flores Cadastradas</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
+                                <th class="py-3 px-4">Flor</th>
+                                <th class="py-3 px-4">Composição</th>
+                                <th class="py-3 px-4">Materiais</th>
+                                <th class="py-3 px-4">Mão de Obra</th>
+                                <th class="py-3 px-4">Custo Total</th>
+                                <th class="py-3 px-4 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <% if (flores && flores.length > 0) { %>
+                                <% flores.forEach(function(fl) { %>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-4 font-semibold text-slate-900"><%= fl.nome %></td>
+                                    <td class="py-3 px-4 text-xs text-slate-500">
+                                        <% if (fl.insumos && fl.insumos.length > 0) { %>
+                                            <%= fl.insumos.map(item => `${item.quantidade}x ${item.insumo.nome}`).join(', ') %>
+                                        <% } else { %>
+                                            —
+                                        <% } %>
+                                    </td>
+                                    <td class="py-3 px-4 font-mono text-xs">R$ <%= Number(fl.custoMateriais || 0).toFixed(2) %></td>
+                                    <td class="py-3 px-4 font-mono text-xs">R$ <%= Number(fl.custoMaoDeObra || 0).toFixed(2) %></td>
+                                    <td class="py-3 px-4 font-mono font-bold text-purple-700">R$ <%= Number(fl.custoTotal || 0).toFixed(2) %></td>
+                                    <td class="py-3 px-4 text-center">
+                                        <form action="/flores/excluir/<%= fl.id %>" method="POST" class="inline">
+                                            <button type="submit" class="text-xs font-bold text-rose-500 hover:underline">Excluir</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-xs text-slate-400 italic">Nenhuma flor cadastrada ainda.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-
-            <!-- Alerta de Mensagem -->
-            <% if (typeof mensagem !== 'undefined' && mensagem) { %>
-                <div class="bg-purple-50 border border-purple-200 text-purple-700 text-xs px-4 py-3 rounded-xl font-medium">
-                    <%= mensagem %>
-                </div>
-            <% } %>
-
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
-                        <th class="py-3 px-4">Nome da Flor</th>
-                        <th class="py-3 px-4 text-center">Hastes Utilizadas</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    <% if (typeof flores !== 'undefined' && flores && flores.length > 0) { %>
-                        <% flores.forEach(function(f) { %>
-                        <tr class="hover:bg-slate-50">
-                            <td class="py-3 px-4 font-semibold text-slate-900"><%= f.nome_flor %></td>
-                            <td class="py-3 px-4 text-center font-mono text-purple-700"><%= f.hastes %> hastes</td>
-                        </tr>
-                        <% }); %>
-                    <% } else { %>
-                    <tr>
-                        <td colspan="2" class="py-12 text-center text-xs text-slate-400 italic">Nenhuma flor cadastrada na planilha.</td>
-                    </tr>
-                    <% } %>
-                </tbody>
-            </table>
         </div>
     </main>
 
-    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
-        &copy; 2026 Flora Atelier • Engenharia de Produção.
-    </footer>
+    <script>
+        const VALOR_HORA_FLOR = Number("<%= Number(config?.valorHora || 0) %>");
 
+        function adicionarLinhaInsumo() {
+            const container = document.getElementById('lista_insumos_flor');
+            const primeira = container.querySelector('.linha-insumo');
+            const clone = primeira.cloneNode(true);
+            clone.querySelector('.select-insumo').value = '';
+            clone.querySelector('.qtd-insumo').value = '';
+            container.appendChild(clone);
+            ligarEventos();
+            calcularFlorPreview();
+        }
+
+        function calcularFlorPreview() {
+            let mat = 0;
+            document.querySelectorAll('#lista_insumos_flor .linha-insumo').forEach(linha => {
+                const select = linha.querySelector('.select-insumo');
+                const qtd = parseFloat(linha.querySelector('.qtd-insumo').value) || 0;
+                const opt = select.options[select.selectedIndex];
+                const precoUnit = opt ? (parseFloat(opt.dataset.preco) || 0) : 0;
+                mat += precoUnit * qtd;
+            });
+
+            const min = parseFloat(document.getElementById('tempo_confeccao_min').value) || 0;
+            const mo = (min / 60) * VALOR_HORA_FLOR;
+            const total = mat + mo;
+
+            document.getElementById('prev_mat_flor').textContent = `R$ ${mat.toFixed(2)}`;
+            document.getElementById('prev_mo_flor').textContent = `R$ ${mo.toFixed(2)}`;
+            document.getElementById('prev_total_flor').textContent = `R$ ${total.toFixed(2)}`;
+        }
+
+        function ligarEventos() {
+            document.querySelectorAll('.select-insumo, .qtd-insumo').forEach(el => {
+                el.removeEventListener('input', calcularFlorPreview);
+                el.removeEventListener('change', calcularFlorPreview);
+                el.addEventListener('input', calcularFlorPreview);
+                el.addEventListener('change', calcularFlorPreview);
+            });
+        }
+
+        document.getElementById('tempo_confeccao_min').addEventListener('input', calcularFlorPreview);
+        ligarEventos();
+    </script>
 </body>
 </html>

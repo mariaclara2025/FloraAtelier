@@ -8,16 +8,30 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
+    <%
+      const fatVal = Number(typeof faturamento !== 'undefined' ? faturamento : 0);
+      const custoProdVal = Number(typeof custo_producao !== 'undefined' ? custo_producao : 0);
+      const custosVal = Number(typeof total_custos !== 'undefined' ? total_custos : 0);
+      const lucroVal = Number(typeof lucro !== 'undefined' ? lucro : (fatVal - custoProdVal - custosVal));
+      const margemVal = Number(typeof margem_liquida !== 'undefined' ? margem_liquida : (fatVal > 0 ? (lucroVal / fatVal) * 100 : 0));
+    %>
+
     <nav class="bg-white border-b border-purple-100 px-6 py-4 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-2">
                 <span class="text-2xl">📊</span>
                 <span class="font-serif font-extrabold text-xl tracking-wide text-purple-700">Flora Admin</span>
             </div>
-            <div class="flex items-center space-x-6 text-xs font-semibold">
+            <div class="flex flex-wrap items-center gap-5 text-xs font-semibold">
                 <a href="/catalogo" class="text-slate-600 hover:text-purple-600">Ver Vitrine</a>
                 <a href="/pedidos" class="text-slate-600 hover:text-purple-600">Gerir Pedidos</a>
                 <a href="/custos" class="text-slate-600 hover:text-purple-600">Custos</a>
+                <a href="/relatorio.pdf?tipo=semanal" target="_blank" class="bg-purple-50 text-purple-700 border border-purple-200 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition-colors">
+                    📄 PDF Semanal
+                </a>
+                <a href="/relatorio.pdf?tipo=mensal" target="_blank" class="bg-purple-600 text-white hover:bg-purple-700 px-3 py-1.5 rounded-lg transition-colors">
+                    📊 PDF Mensal
+                </a>
                 <a href="/logout" class="text-rose-500 hover:underline">Sair</a>
             </div>
         </div>
@@ -30,29 +44,46 @@
                 <h1 class="font-serif text-2xl font-bold text-slate-900">Painel de Gestão & Engenharia</h1>
                 <p class="text-xs text-slate-400">Bem-vinda de volta, <%= typeof nome_usuario !== 'undefined' ? nome_usuario : 'Administradora' %>.</p>
             </div>
-            <a href="/novo_produto" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-5 py-3 rounded-xl transition-all shadow-sm">
-                + Novo Produto / Buquê
-            </a>
+            <div class="flex flex-wrap items-center gap-3">
+                <a href="/relatorio.pdf?tipo=semanal" target="_blank" class="bg-white border border-purple-200 hover:border-purple-400 text-purple-700 font-bold text-xs px-4 py-3 rounded-xl transition-all">
+                    Relatório Semanal (PDF)
+                </a>
+                <a href="/relatorio.pdf?tipo=mensal" target="_blank" class="bg-white border border-purple-200 hover:border-purple-400 text-purple-700 font-bold text-xs px-4 py-3 rounded-xl transition-all">
+                    Relatório Mensal (PDF)
+                </a>
+                <a href="/novo_produto" class="bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs px-5 py-3 rounded-xl transition-all shadow-sm">
+                    + Novo Produto / Buquê
+                </a>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-2">
-                <span class="text-xs font-bold text-slate-400 uppercase">Faturamento Total</span>
-                <h3 class="font-mono text-2xl font-bold text-purple-700">R$ <%= typeof faturamento !== 'undefined' ? faturamento.toFixed(2) : '0.00' %></h3>
+                <span class="text-xs font-bold text-slate-400 uppercase">Faturamento (Mês)</span>
+                <h3 class="font-mono text-2xl font-bold text-purple-700">R$ <%= fatVal.toFixed(2) %></h3>
+                <p class="text-[11px] text-slate-400">Pedidos válidos (exceto cancelados)</p>
+            </div>
+            <div class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <span class="text-xs font-bold text-slate-400 uppercase">Custo de Produção</span>
+                <h3 class="font-mono text-2xl font-bold text-amber-600">R$ <%= custoProdVal.toFixed(2) %></h3>
+                <p class="text-[11px] text-slate-400">Snapshot dos itens vendidos</p>
             </div>
             <div class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-2">
                 <span class="text-xs font-bold text-slate-400 uppercase">Custos Registrados</span>
-                <h3 class="font-mono text-2xl font-bold text-rose-500">R$ <%= typeof total_custos !== 'undefined' ? total_custos.toFixed(2) : '0.00' %></h3>
+                <h3 class="font-mono text-2xl font-bold text-rose-500">R$ <%= custosVal.toFixed(2) %></h3>
+                <p class="text-[11px] text-slate-400">Despesas operacionais / extras</p>
             </div>
-            <div class="bg-white border border-purple-100 rounded-3xl space-y-2 border-purple-100 rounded-3xl p-6 shadow-sm">
-                <span class="text-xs font-bold text-slate-400 uppercase">Lucro Líquido Estimado</span>
-                <h3 class="font-mono text-2xl font-bold text-emerald-600">R$ <%= typeof lucro !== 'undefined' ? lucro.toFixed(2) : '0.00' %></h3>
+            <div class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <span class="text-xs font-bold text-slate-400 uppercase">Lucro Líquido</span>
+                <h3 class="font-mono text-2xl font-bold <%= lucroVal >= 0 ? 'text-emerald-600' : 'text-rose-600' %>">R$ <%= lucroVal.toFixed(2) %></h3>
+                <p class="text-[11px] text-purple-600 font-semibold">Margem líquida: <%= margemVal.toFixed(1) %>%</p>
             </div>
         </div>
 
         <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden p-6 space-y-4">
-            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+            <div class="flex flex-wrap justify-between items-center border-b border-slate-100 pb-4 gap-2">
                 <h3 class="font-serif text-lg font-bold text-slate-900">Produtos Cadastrados</h3>
+                <span class="text-xs text-slate-400">Custo, margem e preço sincronizados</span>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
@@ -60,6 +91,8 @@
                         <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
                             <th class="py-3 px-4">Nome</th>
                             <th class="py-3 px-4">Tipo</th>
+                            <th class="py-3 px-4">Custo Prod.</th>
+                            <th class="py-3 px-4">Margem</th>
                             <th class="py-3 px-4">Preço</th>
                             <th class="py-3 px-4 text-center">Ações</th>
                         </tr>
@@ -68,9 +101,16 @@
                         <% if (typeof produtos !== 'undefined' && produtos && produtos.length > 0) { %>
                             <% produtos.forEach(function(p) { %>
                             <tr class="hover:bg-slate-50">
-                                <td class="py-3 px-4 font-semibold text-slate-900"><%= p.nome %></td>
+                                <td class="py-3 px-4 font-semibold text-slate-900">
+                                    <%= p.nome %>
+                                    <% if (p.precoManual) { %>
+                                        <span class="ml-1 text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">Manual</span>
+                                    <% } %>
+                                </td>
                                 <td class="py-3 px-4 text-xs text-purple-600 uppercase font-semibold"><%= p.tipo %></td>
-                                <td class="py-3 px-4 font-mono font-bold">R$ <%= p.preco.toFixed(2) %></td>
+                                <td class="py-3 px-4 font-mono text-xs text-slate-600">R$ <%= Number(p.custoProducao || 0).toFixed(2) %></td>
+                                <td class="py-3 px-4 font-mono text-xs text-purple-700"><%= Number(p.margemLucro || 0).toFixed(1) %>%</td>
+                                <td class="py-3 px-4 font-mono font-bold text-slate-900">R$ <%= Number(p.preco || 0).toFixed(2) %></td>
                                 <td class="py-3 px-4 text-center">
                                     <a href="/excluir_produto/<%= p.id %>" class="text-xs font-bold text-rose-500 hover:underline">Excluir</a>
                                 </td>
@@ -78,7 +118,7 @@
                             <% }); %>
                         <% } else { %>
                         <tr>
-                            <td colspan="4" class="py-8 text-center text-xs text-slate-400 italic">Nenhum produto cadastrado.</td>
+                            <td colspan="6" class="py-8 text-center text-xs text-slate-400 italic">Nenhum produto cadastrado.</td>
                         </tr>
                         <% } %>
                     </tbody>

@@ -3,50 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flora Atelier - Planilha de Insumos</title>
+    <title>Flora Atelier - Insumos e Materiais</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <nav class="bg-white border-b border-purple-100 px-6 py-4">
-        <div class="max-w-5xl mx-auto flex justify-between items-center">
-            <span class="font-serif font-extrabold text-xl text-purple-700">Controle de Insumos</span>
-            <a href="/dashboard" class="text-xs font-semibold text-purple-600 hover:underline">← Voltar ao Dashboard</a>
+    <nav class="bg-white border-b border-purple-100 px-6 py-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🧶</span>
+                <span class="font-serif font-extrabold text-xl tracking-wide text-purple-700">Flora Admin • Insumos</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-5 text-xs font-semibold">
+                <a href="/dashboard" class="text-slate-600 hover:text-purple-600">Dashboard</a>
+                <a href="/insumos" class="text-purple-700 underline">Insumos</a>
+                <a href="/flores" class="text-slate-600 hover:text-purple-600">Flores</a>
+                <a href="/precificacao" class="text-slate-600 hover:text-purple-600">Buquês & Precificação</a>
+                <a href="/custos" class="text-slate-600 hover:text-purple-600">Custos</a>
+                <a href="/logout" class="text-rose-500 hover:underline">Sair</a>
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-5xl mx-auto px-6 py-8 w-full flex-grow space-y-6">
-        <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden p-6 space-y-4">
-            <h2 class="font-serif text-xl font-bold text-slate-900">Estoque e Insumos Disponíveis</h2>
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
-                        <th class="py-3 px-4">Insumo / Material</th>
-                        <th class="py-3 px-4">Quantidade em Estoque</th>
-                        <th class="py-3 px-4 text-right">Custo Unitário</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    <% if (typeof insumos !== 'undefined' && insumos && insumos.length > 0) { %>
-                        <% insumos.forEach(function(i) { %>
-                        <tr class="hover:bg-slate-50">
-                            <td class="py-3 px-4 font-semibold text-slate-900"><%= i.nome %></td>
-                            <td class="py-3 px-4 font-mono text-purple-700"><%= i.quantidade %> unidades</td>
-                            <td class="py-3 px-4 text-right font-mono font-bold">R$ <%= i.custo_unitario.toFixed(2) %></td>
-                        </tr>
-                        <% }); %>
-                    <% } else { %>
-                    <tr>
-                        <td colspan="3" class="py-12 text-center text-xs text-slate-400 italic">Nenhum insumo cadastrado na planilha.</td>
-                    </tr>
-                    <% } %>
-                </tbody>
-            </table>
+    <main class="max-w-7xl mx-auto px-6 py-8 w-full flex-grow space-y-8">
+        <% if (typeof mensagem !== 'undefined' && mensagem) { %>
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold px-4 py-3 rounded-2xl">
+                <%= mensagem %>
+            </div>
+        <% } %>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Formulário de Insumo -->
+            <form action="/insumos" method="POST" class="bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <h2 class="font-serif text-lg font-bold text-slate-900">Cadastrar / Atualizar Insumo</h2>
+                <p class="text-xs text-slate-400">Informe o valor total pago e a quantidade comprada. O valor unitário e os custos de flores/buquês são calculados na hora.</p>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Nome do Material / Insumo</label>
+                    <input type="text" name="nome" required placeholder="Ex.: Chenille, Arame floral, Embrulho coreano" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Qtd. Comprada</label>
+                        <input type="number" step="0.01" min="0.01" id="qtd_total" name="qtd_total" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" min="0" id="custo_total" name="custo_total" required class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-1">Qtd. Disponível em Estoque (opcional)</label>
+                    <input type="number" step="0.01" min="0" name="qtd_disponivel" placeholder="Se vazio, usa a qtd. comprada" class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm">
+                </div>
+
+                <div class="bg-purple-50 border border-purple-100 rounded-2xl p-3 flex justify-between items-center">
+                    <span class="text-xs font-bold text-purple-800">Preço Unitário Estimado:</span>
+                    <span id="preview_unitario" class="font-mono text-sm font-bold text-purple-700">R$ 0.00</span>
+                </div>
+
+                <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3 rounded-xl transition-all">
+                    Salvar e Recalcular Cascata
+                </button>
+            </form>
+
+            <!-- Tabela de Insumos -->
+            <div class="lg:col-span-2 bg-white border border-purple-100 rounded-3xl p-6 shadow-sm space-y-4">
+                <h2 class="font-serif text-lg font-bold text-slate-900">Materiais e Insumos Cadastrados</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
+                                <th class="py-3 px-4">Insumo</th>
+                                <th class="py-3 px-4">Qtd. Total</th>
+                                <th class="py-3 px-4">Estoque</th>
+                                <th class="py-3 px-4">Custo Total</th>
+                                <th class="py-3 px-4">Unitário</th>
+                                <th class="py-3 px-4 text-center">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            <% if (insumos && insumos.length > 0) { %>
+                                <% insumos.forEach(function(ins) { %>
+                                <tr class="hover:bg-slate-50">
+                                    <td class="py-3 px-4 font-semibold text-slate-900"><%= ins.nome %></td>
+                                    <td class="py-3 px-4 font-mono text-xs"><%= Number(ins.qtdTotal || 0) %></td>
+                                    <td class="py-3 px-4 font-mono text-xs <%= Number(ins.qtdDisponivel || 0) <= 5 ? 'text-rose-600 font-bold' : 'text-emerald-700' %>">
+                                        <%= Number(ins.qtdDisponivel || 0) %>
+                                    </td>
+                                    <td class="py-3 px-4 font-mono text-xs">R$ <%= Number(ins.custoTotal || 0).toFixed(2) %></td>
+                                    <td class="py-3 px-4 font-mono font-bold text-purple-700">R$ <%= Number(ins.precoUnitario || 0).toFixed(2) %></td>
+                                    <td class="py-3 px-4 text-center">
+                                        <form action="/insumos/excluir/<%= ins.id %>" method="POST" class="inline">
+                                            <button type="submit" class="text-xs font-bold text-rose-500 hover:underline">Excluir</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-xs text-slate-400 italic">Nenhum insumo cadastrado ainda.</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 
-    <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
-        &copy; 2026 Flora Atelier • Gestão de Insumos.
-    </footer>
+    <script>
+        const qtdInput = document.getElementById('qtd_total');
+        const custoInput = document.getElementById('custo_total');
+        const previewEl = document.getElementById('preview_unitario');
+
+        function atualizarUnitarioPreview() {
+            const qtd = parseFloat(qtdInput.value) || 0;
+            const custo = parseFloat(custoInput.value) || 0;
+            const unit = qtd > 0 ? custo / qtd : 0;
+            previewEl.textContent = `R$ ${unit.toFixed(2)}`;
+        }
+        qtdInput.addEventListener('input', atualizarUnitarioPreview);
+        custoInput.addEventListener('input', atualizarUnitarioPreview);
+    </script>
 </body>
 </html>
