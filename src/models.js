@@ -48,6 +48,7 @@ class Pedido {
         this.idCliente = idCliente;
         this.status = status;
         this.total = total;
+        this.formaPagamento = formaPagamento;
         this.itens = [];
     }
 

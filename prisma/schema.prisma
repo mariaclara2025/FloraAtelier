@@ -35,6 +35,7 @@ model Pedido {
   status    String   @default("Em Análise")
   total     Float
   data      DateTime @default(now())
+  formaPagamento String   @map("forma_pagamento")
   cliente   Usuario  @relation(fields: [idCliente], references: [id])
 }
 

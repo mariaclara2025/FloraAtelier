@@ -47,9 +47,13 @@
             <% if (typeof produtos !== 'undefined' && produtos && produtos.length > 0) { %>
                 <% produtos.forEach(function(produto) { %>
                 <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition-all">
-                    <div class="bg-gradient-to-br from-purple-100 to-pink-100 aspect-square flex items-center justify-center text-4xl">
-                        💐
-                    </div>
+                   <div class="bg-gradient-to-br from-purple-100 to-pink-100 aspect-square flex items-center justify-center text-4xl overflow-hidden">
+    <% if (produto.imagem) { %>
+        <img src="<%= produto.imagem %>" alt="<%= produto.nome %>" class="w-full h-full object-cover">
+    <% } else { %>
+        💐
+    <% } %>
+</div>
                     <div class="p-5 space-y-3 flex-grow flex flex-col justify-between">
                         <div class="space-y-1">
                             <span class="text-[9px] font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-md uppercase"><%= produto.tipo %></span>

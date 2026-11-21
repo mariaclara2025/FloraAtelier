@@ -11,8 +11,8 @@ const app = express();
 app.engine('html', require('ejs').renderFile);
 app.set('view engine', 'html');
 app.set('views', path.join(__dirname, '../views'));
-
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
 
@@ -57,7 +57,7 @@ app.post('/login', async (req, res) => {
             req.session.usuarioId = usuario.id;
             req.session.nomeUsuario = usuario.nome;
             req.session.tipo = usuario.tipo;
-
+            console.log(req.session.usuarioId)
             if (usuario.tipo === 'Administrador') {
                 return res.redirect('/dashboard');
             }
@@ -186,27 +186,60 @@ app.post('/limpar_carrinho', verificarLogado, (req, res) => {
     req.session.carrinho = [];
     res.redirect('/carrinho');
 });
+app.get('/info_compra',verificarLogado, (req,res) =>{
+    console.log("Aplicou rota info_compra do metodo get")
+    res.render("info_compra")
+})
+app.post('/info_compra', verificarLogado, async (req, res) => {
+    const { endereco, telefone, forma_pagamento } = req.body;
+
+    try {
+        console.log("entrou rota info_compra do metodo post")
+        console.log(req.session.usuarioId)
+         console.log(req.session.usuarioId)
+        console.log(endereco)
+       const usuarioAtualizado = await prisma.usuario.update({
+            where: { id: req.session.usuarioId },
+            data: { endereco, telefone }
+        });
+        req.session.usuario = usuarioAtualizado
+        console.log(req.session.usuario)
+        req.session.forma_pagamento = forma_pagamento;
+            console.log("Aplicou rota info_compra do metodo post")
+        res.redirect('/finalizar_compra');
+    } catch (error) {
+        console.error(error);
+        res.redirect('/carrinho');
+    }
+});
 
 app.get('/finalizar_compra', verificarLogado, async (req, res) => {
     const carrinho = req.session.carrinho || [];
+    console.log("Aplicou rota finalizar_compra do metodo GET")
+
     if (carrinho.length === 0) return res.redirect('/catalogo');
 
     const total = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
     try {
         const novoPedido = await prisma.pedido.create({
-            data: {
-                idCliente: req.session.usuarioId,
-                total: total,
-                status: 'Em Análise'
-            }
+         data: {
+        idCliente: req.session.usuario.id,
+        total: total,
+        status: 'Em Análise',
+        formaPagamento: req.session.forma_pagamento || 'Não informado'
+         }
         });
-
-        const listaItens = carrinho
+            const listaItens = carrinho
             .map(item => `• ${item.quantidade}x ${item.nome} (R$ ${(item.preco * item.quantidade).toFixed(2)})`)
             .join('\n');
+          
 
-        const mensagemWpp = `Olá! Acabei de fazer o pedido *#${novoPedido.id}* no *Flora Atelier* 🌸\n\n*Resumo do Pedido:*\n${listaItens}\n\n*Total:* R$ ${total.toFixed(2)}\n\nEm caso de dúvidas, gostaria de acompanhar por aqui!`;
-        
+       const mensagemWpp = `Olá! Gostaria de finalizar meu pedido #${novoPedido.id}:\n\n` +
+            `*Itens:*\n${listaItens}\n\n` +
+            `*Total:* R$ ${total.toFixed(2)}\n` +
+            `*Pagamento:* ${req.session.forma_pagamento}\n` +
+            `*Endereço:* ${req.session.usuario.endereco}\n` +
+            `*Contato:* ${req.session.usuario.telefone}`;      
        const numeroWpp = '5583982060613'; 
 const linkWpp = `https://wa.me/${numeroWpp}?text=${encodeURIComponent(mensagemWpp)}`;
         req.session.carrinho = [];
