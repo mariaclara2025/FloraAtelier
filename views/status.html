@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Status do Pedido #<%= pedidoId %> - FloraAtelier</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Efeito de líquido subindo e ondulando dentro da bolha */
+    .bolha {
+      position: relative;
+      overflow: hidden;
+      background-color: #f3e8ff; /* roxo bem clarinho de fundo */
+      border: 3px solid #d8b4fe;
+      transition: all 0.5s ease;
+    }
+
+    .liquido {
+      position: absolute;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+      border-radius: 38%;
+      top: 100%; /* Começa vazia (embaixo) */
+      transition: top 1s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: girarOnda 4s linear infinite;
+    }
+
+    /* Estado 1: Etapa atual (Enchendo pela metade e ondulando) */
+    .etapa.ativa .bolha {
+      border-color: #7e22ce;
+      box-shadow: 0 0 18px rgba(147, 51, 234, 0.45);
+      transform: scale(1.1);
+    }
+    .etapa.ativa .liquido {
+      top: 38%; /* Sobe até encher a bolha com efeito de onda */
+    }
+
+    /* Estado 2: Etapa concluída (100% preenchida de roxo) */
+    .etapa.concluida .bolha {
+      border-color: #6b21a8;
+    }
+    .etapa.concluida .liquido {
+      top: -15%; /* Preenche completamente */
+      border-radius: 0%;
+      animation: none;
+    }
+
+    @keyframes girarOnda {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-purple-50/40 text-stone-800 antialiased min-h-screen flex flex-col items-center justify-center p-4">
+
+  <section id="acompanhamento" class="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-purple-100 p-6 sm:p-10">
+    
+    <!-- Cabeçalho -->
+    <div class="text-center mb-10">
+      <span class="inline-block px-3 py-1 text-xs font-semibold tracking-wider text-purple-700 uppercase bg-purple-100 rounded-full mb-2">
+        Rastreamento em Tempo Real
+      </span>
+      <h2 class="text-2xl sm:text-3xl font-bold text-stone-900">
+        Status do Pedido <span class="text-purple-600">#<%= pedidoId %></span>
+      </h2>
+      <p id="subtitulo-status" class="text-sm text-stone-500 mt-1">
+        Atualizando automaticamente conforme o andamento do ateliê
+      </p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="relative flex items-center justify-between w-full mt-8 mb-6">
+      
+      <!-- Linha cinza/lilás de fundo -->
+      <div class="absolute top-7 left-[15%] right-[15%] h-1.5 bg-purple-100 rounded-full z-0"></div>
+
+      <!-- Linha roxa de progresso -->
+      <div id="linha-progresso" class="absolute top-7 left-[15%] h-1.5 bg-purple-600 rounded-full z-10 transition-all duration-700 w-0"></div>
+
+      <!-- ETAPA 1 -->
+      <div class="etapa relative z-20 flex flex-col items-center w-1/3" data-step="0">
+        <div class="bolha flex items-center justify-center w-14 h-14 rounded-full font-bold text-base">
+          <div class="liquido"></div>
+          <span class="numero relative z-10 text-purple-900 transition-colors duration-500">1</span>
+        </div>
+        <p class="titulo mt-3 text-xs sm:text-sm font-semibold text-stone-400 transition-colors">
+          Em Análise
+        </p>
+      </div>
+
+      <!-- ETAPA 2 -->
+      <div class="etapa relative z-20 flex flex-col items-center w-1/3" data-step="1">
+        <div class="bolha flex items-center justify-center w-14 h-14 rounded-full font-bold text-base">
+          <div class="liquido"></div>
+          <span class="numero relative z-10 text-purple-900 transition-colors duration-500">2</span>
+        </div>
+        <p class="titulo mt-3 text-xs sm:text-sm font-semibold text-stone-400 transition-colors">
+          Em Produção
+        </p>
+      </div>
+
+      <!-- ETAPA 3 -->
+      <div class="etapa relative z-20 flex flex-col items-center w-1/3" data-step="2">
+        <div class="bolha flex items-center justify-center w-14 h-14 rounded-full font-bold text-base">
+          <div class="liquido"></div>
+          <span class="numero relative z-10 text-purple-900 transition-colors duration-500">3</span>
+        </div>
+        <p class="titulo mt-3 text-xs sm:text-sm font-semibold text-stone-400 transition-colors">
+          Concluído
+        </p>
+      </div>
+
+    </div>
+
+    <!-- Rodapé -->
+    <div class="mt-10 pt-6 border-t border-purple-100 flex justify-center">
+      <a href="/" class="text-sm font-medium text-purple-600 hover:text-purple-800 transition-colors">
+        ← Voltar para a loja
+      </a>
+    </div>
+
+  </section>
+
+  <script>
+    const pedidoId = "<%= pedidoId %>";
+    let statusInicial = "<%= pedido.status %>";
+
+    function normalizar(texto) {
+      return (texto || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function aplicarStatus(statusTexto) {
+      const etapasLista = ["em analise", "em producao", "concluido"];
+      const indice = etapasLista.indexOf(normalizar(statusTexto));
+      
+      // Se vier algum status desconhecido, assume 0 (Em Análise)
+      const ativo = indice === -1 ? 0 : indice;
+
+      const larguras = ["0%", "35%", "70%"];
+      document.getElementById("linha-progresso").style.width = larguras[ativo];
+
+      document.querySelectorAll(".etapa").forEach((el, idx) => {
+        const num = el.querySelector(".numero");
+        const tit = el.querySelector(".titulo");
+
+        el.classList.remove("ativa", "concluida");
+
+        if (idx < ativo) {
+          el.classList.add("concluida");
+          num.classList.replace("text-purple-900", "text-white");
+          tit.classList.replace("text-stone-400", "text-purple-900");
+        } else if (idx === ativo) {
+          el.classList.add("ativa");
+          num.classList.replace("text-purple-900", "text-white");
+          tit.classList.replace("text-stone-400", "text-purple-700");
+        } else {
+          num.classList.replace("text-white", "text-purple-900");
+          tit.classList.remove("text-purple-900", "text-purple-700");
+          tit.classList.add("text-stone-400");
+        }
+      });
+    }
+
+    // Aplica imediatamente ao abrir a página
+    aplicarStatus(statusInicial);
+
+    // Consulta o servidor a cada 5 segundos para atualizar sem recarregar a página
+    setInterval(async () => {
+      try {
+        const res = await fetch(`/api/status/${pedidoId}`);
+        if (!res.ok) return;
+        const dados = await res.json();
+        if (dados.status && dados.status !== statusInicial) {
+          statusInicial = dados.status;
+          aplicarStatus(dados.status);
+        }
+      } catch (e) {
+        console.error("Erro ao checar atualização:", e);
+      }
+    }, 5000);
+  </script>
+
+</body>
+</html>

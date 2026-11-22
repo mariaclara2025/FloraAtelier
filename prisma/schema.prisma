@@ -99,6 +99,8 @@ model Pedido {
   custoTotal    Float        @default(0.0) @map("custo_total")
   lucroEstimado Float        @default(0.0) @map("lucro_estimado")
   data          DateTime     @default(now())
+  feedback          String?
+  feedbackPublicado Boolean  @default(false)
   cliente       Usuario      @relation(fields: [idCliente], references: [id])
   itens         PedidoItem[]
 }

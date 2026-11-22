@@ -8,7 +8,7 @@
 </head>
 <body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col justify-between">
 
-    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-purple-100 px-6 py-4">
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-40 border-b border-purple-100 px-6 py-4">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <div class="flex items-center space-x-2">
                 <span class="text-2xl">📦</span>
@@ -21,35 +21,131 @@
     <main class="max-w-4xl mx-auto px-6 py-8 w-full flex-grow space-y-6">
         <div class="bg-white border border-purple-100 rounded-3xl shadow-sm overflow-hidden p-6 space-y-4">
             <h2 class="font-serif text-xl font-bold text-slate-900">Acompanhe suas Encomendas</h2>
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
-                        <th class="py-3 px-4">ID do Pedido</th>
-                        <th class="py-3 px-4">Status</th>
-                        <th class="py-3 px-4 text-right">Total</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100 text-sm">
-                    <% if (typeof pedidos !== 'undefined' && pedidos && pedidos.length > 0) { %>
-                        <% pedidos.forEach(function(ped) { %>
-                        <tr class="hover:bg-slate-50">
-                            <td class="py-3 px-4 font-mono font-semibold text-slate-900">#<%= ped.id %></td>
-                            <td class="py-3 px-4 text-xs font-bold text-purple-600"><%= ped.status %></td>
-                            <td class="py-3 px-4 text-right font-mono font-bold">R$ <%= ped.total.toFixed(2) %></td>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-400 text-[11px] font-bold uppercase border-b border-slate-100">
+                            <th class="py-3 px-4">ID do Pedido</th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4 text-right">Total</th>
+                            <th class="py-3 px-4 text-right">Acompanhamento</th>
                         </tr>
-                        <% }); %>
-                    <% } else { %>
-                    <tr>
-                        <td colspan="3" class="py-12 text-center text-xs text-slate-400 italic">Você ainda não realizou nenhum pedido.</td>
-                    </tr>
-                    <% } %>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm">
+                        <% if (typeof pedidos !== 'undefined' && pedidos && pedidos.length > 0) { %>
+                            <% pedidos.forEach(function(ped) { 
+                                 const statusLimpo = (ped.status || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                                 const isConcluido = statusLimpo.includes('concluido');
+                            %>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3.5 px-4 font-mono font-semibold text-slate-900 align-top">#<%= ped.id %></td>
+                                
+                                <td class="py-3.5 px-4 text-xs font-bold align-top">
+                                    <% if (isConcluido) { %>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700">
+                                            ✓ Concluído
+                                        </span>
+                                        <% if (ped.feedback) { %>
+                                            <p class="mt-2 font-normal text-slate-500 italic max-w-xs">
+                                                "<%= ped.feedback %>"
+                                            </p>
+                                        <% } %>
+                                    <% } else { %>
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-purple-100 text-purple-700">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse"></span>
+                                            <%= ped.status %>
+                                        </span>
+                                    <% } %>
+                                </td>
+
+                                <td class="py-3.5 px-4 text-right font-mono font-bold text-slate-800 align-top">
+                                    R$ <%= Number(ped.total).toFixed(2) %>
+                                </td>
+
+                                <td class="py-3.5 px-4 text-right align-top">
+                                    <% if (!isConcluido) { %>
+                                        <div class="inline-flex flex-wrap items-center justify-end gap-2">
+                                            <a href="/status/<%= ped.id %>#acompanhamento" 
+                                               class="inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold text-white bg-purple-600 rounded-xl shadow-sm hover:bg-purple-700 transition-colors">
+                                                Consultar status do pedido
+                                            </a>
+
+                                            <button type="button"
+                                                    onclick="abrirModalFeedback('<%= ped.id %>')"
+                                                    class="inline-flex items-center justify-center px-3.5 py-2 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors">
+                                                ✓ Concluir e Avaliar
+                                            </button>
+                                        </div>
+                                    <% } else { %>
+                                        <span class="inline-block px-3 py-1.5 text-xs font-semibold text-slate-400 bg-slate-100 rounded-xl">
+                                            Concluído
+                                        </span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        <% } else { %>
+                        <tr>
+                            <td colspan="4" class="py-12 text-center text-xs text-slate-400 italic">Você ainda não realizou nenhum pedido.</td>
+                        </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </main>
+
+    <!-- Modal de Feedback ao Concluir Pedido -->
+    <div id="modal-feedback" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-purple-100 space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="font-serif text-lg font-bold text-slate-900">
+                    Concluir Pedido <span id="modal-pedido-num" class="text-purple-600">#</span>
+                </h3>
+                <button type="button" onclick="fecharModalFeedback()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+            </div>
+
+            <p class="text-xs text-slate-500">
+                Confirme que você recebeu sua encomenda e conte para o Flora Atelier o que achou do seu buquê:
+            </p>
+
+            <form id="form-concluir-pedido" method="POST" class="space-y-4">
+                <div>
+                    <label for="feedback" class="block text-xs font-bold text-slate-700 mb-1">Seu feedback (opcional)</label>
+                    <textarea id="feedback" name="feedback" rows="3"
+                              placeholder="Ex: Flores lindas, chegou tudo perfeito e no horário!"
+                              class="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-800 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"></textarea>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="fecharModalFeedback()"
+                            class="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-700">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            class="px-5 py-2.5 text-xs font-semibold text-white bg-purple-600 rounded-xl hover:bg-purple-700 shadow-sm transition-colors">
+                        Confirmar Recebimento
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <footer class="text-slate-400 text-[11px] py-6 text-center border-t border-slate-100 bg-white">
         &copy; 2026 Flora Atelier
     </footer>
+
+    <script>
+        function abrirModalFeedback(pedidoId) {
+            document.getElementById('modal-pedido-num').textContent = '#' + pedidoId;
+            document.getElementById('form-concluir-pedido').action = '/pedidos/' + pedidoId + '/concluir';
+            document.getElementById('feedback').value = '';
+            document.getElementById('modal-feedback').classList.remove('hidden');
+        }
+
+        function fecharModalFeedback() {
+            document.getElementById('modal-feedback').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>

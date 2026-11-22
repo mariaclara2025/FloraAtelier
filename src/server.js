@@ -163,9 +163,21 @@ app.get('/catalogo', verificarLogado, async (req, res) => {
         if (preco_max) {
             filtros.preco = { lte: parseFloat(preco_max) };
         }
+            // Dentro da sua rota GET '/catalogo' (ou '/')
+const feedbacksAprovados = await prisma.pedido.findMany({
+    where: {
+        feedbackPublicado: true,
+        feedback: { not: null }
+    },
+    include: {
+        cliente: true // Ajuste se o relacionamento com usuário se chamar 'usuario' no seu schema
+    },
+    orderBy: { id: 'desc' },
+    take: 10
+});
 
         const produtos = await prisma.produto.findMany({ where: filtros });
-        return res.render('catalogo', { produtos, nome_usuario: req.session.nomeUsuario });
+        return res.render('catalogo', { produtos, nome_usuario: req.session.nomeUsuario, produtos, feedbacksAprovados });
     } catch (error) {
         console.error(error);
         return res.status(500).send('Erro ao carregar o catálogo.');
@@ -187,6 +199,29 @@ app.get('/produto/:id', verificarLogado, async (req, res) => {
 // =======================================================
 // CARRINHO DE COMPRAS E PEDIDOS
 // =======================================================
+app.get('/status/:id', async (req, res) => {
+
+const pedidoId = Number(req.params.id);
+
+    const pedido = await prisma.pedido.findUnique({
+        where: { id: pedidoId }
+    });
+
+    if (!pedido) {
+        return res.status(404).send("Pedido não encontrado");
+    }
+
+    res.render('status', { pedidoId, pedido });
+});
+// para continuamente informar o status do pedido
+app.get('/api/status/:id', async (req, res) => {
+    const pedido = await prisma.pedido.findUnique({
+        where: { id: Number(req.params.id) },
+        select: { status: true }
+    });
+    if (!pedido) return res.status(404).json({ erro: 'Não encontrado' });
+    res.json({ status: pedido.status });
+});
 app.get('/carrinho', verificarLogado, (req, res) => {
     const carrinho = req.session.carrinho || [];
     const total_carrinho = carrinho.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
@@ -242,6 +277,7 @@ app.post('/info_compra', verificarLogado, async (req, res) => {
             where: { id: req.session.usuarioId },
             data: { endereco, telefone }
         });
+        
         req.session.usuario = usuarioAtualizado;
         req.session.forma_pagamento = forma_pagamento || 'Não informado';
         return res.redirect('/finalizar_compra');
@@ -260,6 +296,7 @@ app.get('/finalizar_compra', verificarLogado, async (req, res) => {
             const ultimoLink = req.session.ultimoLinkWpp || '';
             return res.render('confirmacao', { linkWpp: ultimoLink, pedidoId: ultimoId });
         }
+        cosole.log(ultimoId)
         return res.redirect('/catalogo');
     }
 
@@ -324,10 +361,58 @@ app.get('/meus_pedidos', verificarLogado, async (req, res) => {
         return res.status(500).send('Erro ao buscar seus pedidos.');
     }
 });
+// Rota para o CLIENTE concluir o pedido e salvar o feedback
+app.post('/pedidos/:id/concluir', verificarLogado, async (req, res) => {
+    try {
+        const pedidoId = Number(req.params.id);
+        const { feedback } = req.body;
 
+        const pedido = await prisma.pedido.findFirst({
+            where: {
+                id: pedidoId,
+                idCliente: req.session.usuarioId
+            }
+        });
+
+        if (!pedido) {
+            return res.status(403).send('Pedido não encontrado ou sem permissão.');
+        }
+
+        await prisma.pedido.update({
+            where: { id: pedidoId },
+            data: {
+                status: 'Concluído',
+                feedback: feedback && feedback.trim() !== '' ? feedback.trim() : null
+            }
+        });
+
+        return res.redirect('/meus_pedidos');
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao concluir o pedido.');
+    }
+});
 // =======================================================
 // PAINEL ADMINISTRATIVO, ENGENHARIA, FINANÇAS E PDF
 // =======================================================
+app.post('/admin/pedidos/:id/publicar-feedback', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const pedidoId = Number(req.params.id);
+        const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+
+        if (!pedido) return res.status(404).send('Pedido não encontrado.');
+
+        await prisma.pedido.update({
+            where: { id: pedidoId },
+            data: { feedbackPublicado: !pedido.feedbackPublicado }
+        });
+
+        return res.redirect('/pedidos'); 
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao moderar feedback.');
+    }
+});
 app.get('/dashboard', verificarLogado, verificarAdmin, async (req, res) => {
     try {
         const [produtos, pedidos, resumoMensal] = await Promise.all([
@@ -355,7 +440,45 @@ app.get('/dashboard', verificarLogado, verificarAdmin, async (req, res) => {
         return res.status(500).send('Erro ao carregar o dashboard administrativo.');
     }
 });
+// 1. Página exclusiva para o Admin avaliar os feedbacks recebidos
+app.get('/admin/feedbacks', verificarLogado, verificarAdmin, async (req, res) => {
+    try {
+        const pedidosComFeedback = await prisma.pedido.findMany({
+            where: {
+                feedback: { not: null }
+            },
+            include: {
+                cliente: true // Se no seu schema a relação se chamar 'usuario', troque para 'usuario: true'
+            },
+            orderBy: { id: 'desc' }
+        });
 
+        res.render('avaliar_feedbacks', { pedidos: pedidosComFeedback });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Erro ao carregar feedbacks.');
+    }
+});
+
+// 2. Botão de Aprovar / Ocultar no carrossel
+app.post('/admin/feedbacks/:id/alternar', verificarLogado, verificarAdmin,async (req, res) => {
+    try {
+        const pedidoId = Number(req.params.id);
+        const pedido = await prisma.pedido.findUnique({ where: { id: pedidoId } });
+
+        if (!pedido) return res.status(404).send('Pedido não encontrado.');
+
+        await prisma.pedido.update({
+            where: { id: pedidoId },
+            data: { feedbackPublicado: !pedido.feedbackPublicado }
+        });
+
+        return res.redirect('/admin/feedbacks');
+    } catch (error) {
+        console.error(error);
+        return res.status(500).send('Erro ao atualizar status do feedback.');
+    }
+});
 // Insumos / Materiais -> views/planilha_insumos.html
 app.get('/insumos', verificarLogado, verificarAdmin, async (req, res) => {
     try {
