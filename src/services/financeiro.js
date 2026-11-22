@@ -371,11 +371,10 @@ async function salvarBuquePrecificado({
     const config = await obterConfiguracao(tx);
     const usarManual = Boolean(precoManual);
 
-    const margem =
+   const margem =
       margemLucro !== undefined && margemLucro !== '' && margemLucro !== null
         ? Math.min(99, Math.max(0, Number(margemLucro)))
         : Number(config.margemPadrao);
-
     const dadosBase = {
       nome: String(nome).trim(),
       descricao: descricao || null,

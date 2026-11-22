@@ -150,7 +150,10 @@ app.get('/logout', (req, res) => {
 app.get('/catalogo', verificarLogado, async (req, res) => {
     const { pesquisa, categoria, preco_max } = req.query;
     try {
-        const filtros = {};
+        const filtros = {OR: [
+                { imagem: { not: null } },
+                { descricao: { not: null } }
+            ]};
         if (pesquisa) {
             filtros.nome = { contains: pesquisa };
         }
@@ -561,12 +564,15 @@ app.get('/relatorio.pdf', verificarLogado, verificarAdmin, async (req, res) => {
     }
 });
 
-app.get('/novo_produto', verificarLogado, verificarAdmin, (req, res) => {
-    res.render('novo_produto');
+app.get('/novo_produto', verificarLogado, verificarAdmin, async(req, res) => {
+    const produtos = await prisma.produto.findMany({
+        orderBy: { nome: 'asc' }
+    });
+    res.render('novo_produto.html', { produtos });
 });
 
 app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
-    const {
+    const {id,
         nome,
         descricao,
         preco,
@@ -576,12 +582,25 @@ app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
         cor_principal,
         tempo_montagem_min,
         margem_lucro,
-        preco_manual
+        preco_manual // manual
     } = req.body;
 
     const usarPrecoManual = preco_manual === 'true' || preco_manual === 'on' || preco_manual === true;
 
     try {
+        if (id) {
+            await prisma.produto.update({
+                where: { id: Number(id) },
+                data: {
+                    nome: String(nome).trim(),
+                    descricao: descricao || 'Buquê artesanal em chenille.',
+                    tipo: tipo || 'Buquê Completo',
+                    tamanho: tamanho || 'Médio',
+                    corPrincipal: cor_principal || 'Variado',
+                    ...(imagem ? { imagem } : {})
+                }
+            });}
+            else{ 
         await salvarBuquePrecificado({
             nome,
             descricao,
@@ -594,7 +613,7 @@ app.post('/novo_produto', verificarLogado, verificarAdmin, async (req, res) => {
             precoManual: usarPrecoManual,
             precoInformado: preco !== undefined && preco !== '' ? Number(preco) : undefined
         });
-
+    }
         return res.redirect('/dashboard');
     } catch (error) {
         console.error(error);

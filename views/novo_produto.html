@@ -11,7 +11,7 @@
         <div class="bg-white border border-purple-100 rounded-3xl shadow-sm p-8 space-y-6">
             <div class="border-b border-slate-100 pb-4">
                 <h1 class="font-serif text-xl font-bold text-slate-900">Cadastrar Novo Produto</h1>
-                <p class="text-xs text-slate-400">Adicione novos buquês ou flores de chenille ao catálogo.</p>
+                <p class="text-xs text-slate-400">Selecione um buquê já precificado para complementar os dados ou crie um item avulso.</p>
             </div>
 
             <% if (typeof mensagem !== 'undefined' && mensagem) { %>
@@ -20,7 +20,27 @@
                 </div>
             <% } %>
 
-            <form action="/novo_produto" method="POST"  class="space-y-4">
+            <form action="/novo_produto" method="POST" class="space-y-4">
+                <input type="hidden" name="id" id="produto_id">
+
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-purple-700 uppercase">Vincular Buquê já Precificado</label>
+                    <select id="select-buque-existente" class="w-full bg-purple-50 border border-purple-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-purple-400">
+                        <option value="">-- Criar novo produto avulso do zero --</option>
+                        <% (typeof produtos !== 'undefined' ? produtos : []).forEach(p => { %>
+                            <option value="<%= p.id %>"
+                                data-nome="<%= p.nome %>"
+                                data-descricao="<%= p.descricao || '' %>"
+                                data-preco="<%= Number(p.preco || 0).toFixed(2) %>"
+                                data-tipo="<%= p.tipo || '' %>"
+                                data-tamanho="<%= p.tamanho || '' %>"
+                                data-cor="<%= p.corPrincipal || '' %>">
+                                <%= p.nome %> (R$ <%= Number(p.preco || 0).toFixed(2) %>)
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
                 <div class="space-y-1">
                     <label class="text-xs font-bold text-slate-500 uppercase">Nome do Produto</label>
                     <input type="text" name="nome" required placeholder="Ex: Buquê Girassol Van Gogh" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none">
@@ -55,7 +75,7 @@
                     <input type="hidden" name="imagem" id="imagem-base64">
                 </div>
                 <div class="pt-4 flex gap-4">
-                    <a href="/novo_produto" class="w-1/3 bg-slate-100 text-slate-600 font-bold text-xs py-3.5 rounded-xl text-center uppercase tracking-wider flex items-center justify-content">Cancelar</a>
+                    <a href="/novo_produto" class="w-1/3 bg-slate-100 text-slate-600 font-bold text-xs py-3.5 rounded-xl text-center uppercase tracking-wider flex items-center justify-center">Cancelar</a>
                     <button type="submit" class="w-2/3 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-3.5 rounded-xl uppercase tracking-wider transition-all">Salvar Produto</button>
                 </div>
             </form>
@@ -63,6 +83,30 @@
     </main>
 
     <script>
+        document.getElementById('select-buque-existente').addEventListener('change', function () {
+            const opt = this.options[this.selectedIndex];
+            const campoId = document.getElementById('produto_id');
+
+            if (!opt.value) {
+                campoId.value = '';
+                document.querySelector('[name="nome"]').value = '';
+                document.querySelector('[name="descricao"]').value = '';
+                document.querySelector('[name="preco"]').value = '';
+                document.querySelector('[name="tipo"]').value = '';
+                document.querySelector('[name="tamanho"]').value = '';
+                document.querySelector('[name="cor_principal"]').value = '';
+                return;
+            }
+
+            campoId.value = opt.value;
+            document.querySelector('[name="nome"]').value = opt.dataset.nome || '';
+            document.querySelector('[name="descricao"]').value = opt.dataset.descricao || '';
+            document.querySelector('[name="preco"]').value = opt.dataset.preco || '';
+            document.querySelector('[name="tipo"]').value = opt.dataset.tipo || '';
+            document.querySelector('[name="tamanho"]').value = opt.dataset.tamanho || '';
+            document.querySelector('[name="cor_principal"]').value = opt.dataset.cor || '';
+        });
+
         document.getElementById('seletor-imagem').addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (!file) return;
